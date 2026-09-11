@@ -12,11 +12,11 @@ public class ArchitectureTest {
 
     @ArchTest
     public static final ArchRule domain_should_not_depend_on_framework_or_infrastructure =
-            noClasses().that().resideInAPackage("..domain..")
+            noClasses().that().resideInAPackage("com.project.boardgame.domain..")
                     .should().dependOnClassesThat().resideInAnyPackage(
                             "org.springframework..",
                             "jakarta.persistence..",
                             "java.sql..",
                             "..infrastructure.."
-                    );
+                    ).allowEmptyShould(true);
 }

@@ -4,7 +4,7 @@ xây dựng hệ thống Web Game Cờ Truyền Thống (Ca-rô, Ô ăn quan, C�
 Architecture, phạm vi MVP cho đồ án tốt nghiệp.
 
 # TECH STACK BẮT BUỘC
-- Backend: Java 21 (Records, Pattern Matching), Spring Boot 4.1.x
+- Backend: Java 25 (Records, Pattern Matching), Spring Boot 4.1.x
 - Frontend: React 18+, TypeScript, Vite, Zustand, TailwindCSS.
 - Database: PostgreSQL 16 (Spring Data JPA).
 
