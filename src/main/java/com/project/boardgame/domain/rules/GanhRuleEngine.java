@@ -83,7 +83,73 @@ public class GanhRuleEngine implements GameRuleEngine {
                 new Position(to.x() + 1, to.y() - 1));
         }
 
+        // Apply Chẹt (Bao vây) logic
+        applyChet(newPieces, player, opponent);
+
         return new BoardState(newPieces);
+    }
+
+    private void applyChet(java.util.Map<Position, Piece> pieces, Player player, Player opponent) {
+        java.util.Set<Position> visited = new java.util.HashSet<>();
+        
+        for (int x = 0; x <= 4; x++) {
+            for (int y = 0; y <= 4; y++) {
+                Position startPos = new Position(x, y);
+                Piece piece = pieces.get(startPos);
+                
+                if (piece != null && piece.player() == opponent && !visited.contains(startPos)) {
+                    java.util.List<Position> group = new java.util.ArrayList<>();
+                    java.util.Queue<Position> queue = new java.util.LinkedList<>();
+                    boolean hasLiberty = false;
+                    
+                    queue.add(startPos);
+                    visited.add(startPos);
+                    
+                    while (!queue.isEmpty()) {
+                        Position current = queue.poll();
+                        group.add(current);
+                        
+                        for (Position adj : getAdjacentPositions(current)) {
+                            Piece adjPiece = pieces.get(adj);
+                            if (adjPiece == null) {
+                                hasLiberty = true;
+                            } else if (adjPiece.player() == opponent && !visited.contains(adj)) {
+                                visited.add(adj);
+                                queue.add(adj);
+                            }
+                        }
+                    }
+                    
+                    if (!hasLiberty) {
+                        for (Position p : group) {
+                            pieces.put(p, new Piece(player));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private java.util.List<Position> getAdjacentPositions(Position p) {
+        java.util.List<Position> adj = new java.util.ArrayList<>();
+        int[] dx = {-1, 0, 1, -1, 1, -1, 0, 1};
+        int[] dy = {-1, -1, -1, 0, 0, 1, 1, 1};
+        
+        for (int i = 0; i < 8; i++) {
+            int nx = p.x() + dx[i];
+            int ny = p.y() + dy[i];
+            Position np = new Position(nx, ny);
+            if (isWithinBounds(np)) {
+                if (dx[i] != 0 && dy[i] != 0) {
+                    if ((p.x() + p.y()) % 2 == 0) {
+                        adj.add(np);
+                    }
+                } else {
+                    adj.add(np);
+                }
+            }
+        }
+        return adj;
     }
 
     private void checkAndApplyGanh(java.util.Map<Position, Piece> pieces, Player player, Player opponent, Position p1, Position p2) {

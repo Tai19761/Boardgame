@@ -129,4 +129,36 @@ Hãy theo dõi sát sao output của Agent. Đảm bảo rằng nó in ra đư�
 cả 3 test luật cờ mới và bài test kiến trúc `ArchitectureTest` đều báo `SUCCESS` trước khi
 thực thi lệnh commit.
 ```
+Bằng chứng test 2 chiều đã rất rõ ràng, tường lửa hoạt động tốt. Tôi xác nhận commit Lệnh 2 thành công.
 
+### Lệnh 3: Logic khó (Gánh).
+Hãy implement logic "Gánh" trong GanhRuleEngine: khi một quân di chuyển vào ô trống nằm ngay giữa 2 quân đối phương trên cùng 1 đường thẳng (ngang/dọc/chéo hợp lệ), 2 quân đối phương đó sẽ bị thu phục và biến thành quân phe mình.
+Cập nhật code logic và viết thêm các Unit Test chuyên sâu cho trường hợp Gánh (bao gồm Gánh ngang, dọc, chéo).
+
+Tiêu chí hoàn thành (DoD):
+
+Code compile không lỗi.
+
+Toàn bộ Unit Test (test Gánh mới, test cơ bản cũ, và bài test ArchUnit) đều phải PASS.
+
+Tuyệt đối không sửa hay nới lỏng các bài test cũ.
+
+Dán nguyên văn output console của lệnh test đã chạy (không tóm tắt, diễn giải).
+
+Chỉ khi đạt đủ các điều trên mới được thực thi: git commit -m "feat: implement ganh logic and tests"
+
+### Lệnh 4: Logic "Chẹt" (Bao vây) và nước "Mở".
+
+Hãy implement logic "Chẹt" trong GanhRuleEngine: Nếu một quân hoặc một nhóm quân bị đối phương bao vây hoàn toàn (không còn bất kỳ ô trống nào kề cạnh để di chuyển), toàn bộ nhóm quân đó sẽ bị đổi màu thành quân đối phương.
+Chú ý kết hợp xử lý thế "Mở" (tự sát): Nếu một người chơi chủ động đi một nước cờ tự đưa mình vào thế bị chẹt, thì quân đó (và nhóm quân đó) KHÔNG bị thu phục.
+Viết bổ sung các Unit Test chuyên sâu cho kịch bản Chẹt 1 quân, Chẹt 1 nhóm quân, và nước đi Mở.
+
+Tiêu chí hoàn thành (DoD):
+
+Code compile không lỗi.
+
+Toàn bộ Unit Test (bao gồm test Chẹt mới, test Gánh/cơ bản cũ, và ArchitectureTest) đều phải PASS. Tuyệt đối không xóa test cũ.
+
+Dán nguyên văn output console của lệnh test đã chạy.
+
+Chỉ khi đạt đủ các điều trên mới được chạy lệnh: git commit -m "feat: implement chet logic and tests"

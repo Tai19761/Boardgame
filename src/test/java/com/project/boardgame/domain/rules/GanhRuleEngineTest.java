@@ -146,4 +146,76 @@ class GanhRuleEngineTest {
         // Assert
         assertEquals(Player.PLAYER_2, newBoard.pieces().get(new Position(1, 2)).player(), "Left piece should NOT be ganh-ed");
     }
+
+    @Test
+    void shouldApplyChetSinglePiece() {
+        // Arrange
+        // Opponent at (0, 0), Player 1 moves to (1, 0).
+        // The (0, 0) piece is in the corner, adjacent to (1, 0), (0, 1), and (1, 1).
+        // Let's block (0, 1) and (1, 1) with Player 1 pieces.
+        Position from = new Position(2, 0);
+        Position to = new Position(1, 0);
+        pieces.put(from, new Piece(Player.PLAYER_1));
+        pieces.put(new Position(0, 1), new Piece(Player.PLAYER_1));
+        pieces.put(new Position(1, 1), new Piece(Player.PLAYER_1));
+        pieces.put(new Position(0, 0), new Piece(Player.PLAYER_2)); // To be chet
+        
+        BoardState board = new BoardState(pieces);
+        MoveStep move = new MoveStep(from, to);
+
+        // Act
+        BoardState newBoard = ruleEngine.executeMove(board, move, Player.PLAYER_1);
+
+        // Assert
+        assertEquals(Player.PLAYER_1, newBoard.pieces().get(new Position(0, 0)).player(), "Corner piece should be chet-ed");
+    }
+
+    @Test
+    void shouldApplyChetGroup() {
+        // Arrange
+        // Group of two P2 pieces at (0, 0) and (0, 1).
+        // Surrounded by P1 pieces.
+        Position from = new Position(2, 0);
+        Position to = new Position(1, 0); // P1 moves here to close the group
+        pieces.put(from, new Piece(Player.PLAYER_1));
+        
+        pieces.put(new Position(1, 1), new Piece(Player.PLAYER_1));
+        pieces.put(new Position(0, 2), new Piece(Player.PLAYER_1));
+        
+        pieces.put(new Position(0, 0), new Piece(Player.PLAYER_2));
+        pieces.put(new Position(0, 1), new Piece(Player.PLAYER_2));
+        
+        BoardState board = new BoardState(pieces);
+        MoveStep move = new MoveStep(from, to);
+
+        // Act
+        BoardState newBoard = ruleEngine.executeMove(board, move, Player.PLAYER_1);
+
+        // Assert
+        assertEquals(Player.PLAYER_1, newBoard.pieces().get(new Position(0, 0)).player(), "Group piece 1 should be chet-ed");
+        assertEquals(Player.PLAYER_1, newBoard.pieces().get(new Position(0, 1)).player(), "Group piece 2 should be chet-ed");
+    }
+
+    @Test
+    void shouldAllowMoWithoutBeingCaptured() {
+        // Arrange
+        // Player 1 moves to a position where they have 0 liberties.
+        // It's a suicide move (Mở), so they should NOT be captured.
+        Position from = new Position(0, 2);
+        Position to = new Position(0, 1); // Move into a corner-like trap
+        
+        pieces.put(from, new Piece(Player.PLAYER_1));
+        pieces.put(new Position(0, 0), new Piece(Player.PLAYER_2));
+        pieces.put(new Position(1, 0), new Piece(Player.PLAYER_2));
+        pieces.put(new Position(1, 1), new Piece(Player.PLAYER_2));
+        
+        BoardState board = new BoardState(pieces);
+        MoveStep move = new MoveStep(from, to);
+
+        // Act
+        BoardState newBoard = ruleEngine.executeMove(board, move, Player.PLAYER_1);
+
+        // Assert
+        assertEquals(Player.PLAYER_1, newBoard.pieces().get(to).player(), "Player piece should not be captured by suicide (Mở)");
+    }
 }
