@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -67,5 +68,82 @@ class GanhRuleEngineTest {
 
         // Act & Assert
         assertFalse(ruleEngine.isValidMove(board, move, Player.PLAYER_1));
+    }
+
+    @Test
+    void shouldApplyHorizontalGanh() {
+        // Arrange
+        Position from = new Position(2, 1);
+        Position to = new Position(2, 2);
+        pieces.put(from, new Piece(Player.PLAYER_1));
+        pieces.put(new Position(1, 2), new Piece(Player.PLAYER_2));
+        pieces.put(new Position(3, 2), new Piece(Player.PLAYER_2));
+        BoardState board = new BoardState(pieces);
+        MoveStep move = new MoveStep(from, to);
+
+        // Act
+        BoardState newBoard = ruleEngine.executeMove(board, move, Player.PLAYER_1);
+
+        // Assert
+        assertTrue(newBoard.pieces().containsKey(to));
+        assertEquals(Player.PLAYER_1, newBoard.pieces().get(to).player());
+        assertEquals(Player.PLAYER_1, newBoard.pieces().get(new Position(1, 2)).player(), "Left piece should be ganh-ed");
+        assertEquals(Player.PLAYER_1, newBoard.pieces().get(new Position(3, 2)).player(), "Right piece should be ganh-ed");
+    }
+
+    @Test
+    void shouldApplyVerticalGanh() {
+        // Arrange
+        Position from = new Position(1, 2);
+        Position to = new Position(2, 2);
+        pieces.put(from, new Piece(Player.PLAYER_1));
+        pieces.put(new Position(2, 1), new Piece(Player.PLAYER_2));
+        pieces.put(new Position(2, 3), new Piece(Player.PLAYER_2));
+        BoardState board = new BoardState(pieces);
+        MoveStep move = new MoveStep(from, to);
+
+        // Act
+        BoardState newBoard = ruleEngine.executeMove(board, move, Player.PLAYER_1);
+
+        // Assert
+        assertEquals(Player.PLAYER_1, newBoard.pieces().get(new Position(2, 1)).player(), "Top piece should be ganh-ed");
+        assertEquals(Player.PLAYER_1, newBoard.pieces().get(new Position(2, 3)).player(), "Bottom piece should be ganh-ed");
+    }
+
+    @Test
+    void shouldApplyDiagonalGanh() {
+        // Arrange
+        Position from = new Position(1, 1);
+        Position to = new Position(2, 2);
+        pieces.put(from, new Piece(Player.PLAYER_1));
+        pieces.put(new Position(1, 3), new Piece(Player.PLAYER_2));
+        pieces.put(new Position(3, 1), new Piece(Player.PLAYER_2));
+        BoardState board = new BoardState(pieces);
+        MoveStep move = new MoveStep(from, to);
+
+        // Act
+        BoardState newBoard = ruleEngine.executeMove(board, move, Player.PLAYER_1);
+
+        // Assert
+        assertEquals(Player.PLAYER_1, newBoard.pieces().get(new Position(1, 3)).player(), "Top-right piece should be ganh-ed");
+        assertEquals(Player.PLAYER_1, newBoard.pieces().get(new Position(3, 1)).player(), "Bottom-left piece should be ganh-ed");
+    }
+
+    @Test
+    void shouldNotApplyGanhIfOnlyOneOpponent() {
+        // Arrange
+        Position from = new Position(2, 1);
+        Position to = new Position(2, 2);
+        pieces.put(from, new Piece(Player.PLAYER_1));
+        pieces.put(new Position(1, 2), new Piece(Player.PLAYER_2));
+        // No opponent piece on (3, 2)
+        BoardState board = new BoardState(pieces);
+        MoveStep move = new MoveStep(from, to);
+
+        // Act
+        BoardState newBoard = ruleEngine.executeMove(board, move, Player.PLAYER_1);
+
+        // Assert
+        assertEquals(Player.PLAYER_2, newBoard.pieces().get(new Position(1, 2)).player(), "Left piece should NOT be ganh-ed");
     }
 }

@@ -98,3 +98,35 @@ bị đốt nhiều nhất nếu cứ để AI thử lại vô hạn lần trên
 - Luôn ép AI viết Unit Test trước — lỗi thì ném log lỗi lại, không tự đọc code bắt lỗi.
 - Luôn đòi bằng chứng (log console thật), không nhận lời khai "đã pass".
 - Mọi commit chỉ xảy ra sau DoD đạt đủ — không có commit "tạm".
+
+---
+
+## NHẬT KÝ LỆNH ĐÃ GIAO CHO ANTIGRAVITY
+
+Ghi lại nguyên văn từng lệnh đã thực sự gửi (không phải lệnh mẫu ở trên) để tra cứu sau này.
+Mỗi mục: ngày, game/task, trạng thái.
+
+### [Game: Cờ gánh] Lệnh 2 — Luật cờ cơ bản
+**Trạng thái:** Đã gửi, đang chờ kết quả từ Antigravity.
+
+```
+Chúng ta chuyển sang Lệnh 2: Luật cờ cơ bản.
+
+Hãy tạo interface `GameRuleEngine` và class `GanhRuleEngine` (đặt trong package
+`domain/rules`). Viết 3 Unit Test (dùng JUnit 5) cho Cờ Gánh: kiểm tra di chuyển hợp lệ,
+kiểm tra di chuyển sai đường, và kiểm tra di chuyển vào ô đã có quân.
+
+Tiêu chí hoàn thành (DoD):
+
+* Code compile không lỗi.
+* Toàn bộ Unit Test (bao gồm 3 test mới VÀ ArchitectureTest cũ) đều phải PASS.
+* Tuyệt đối không nới lỏng hay xóa bài test ArchUnit cũ để lách luật.
+* Dán nguyên văn output console của lệnh test đã chạy (không tóm tắt, không diễn giải).
+* Chỉ khi đạt đủ các điều trên mới được thực thi:
+  git commit -m "feat: add basic rules and tests for Ganh"
+
+Hãy theo dõi sát sao output của Agent. Đảm bảo rằng nó in ra được log console chứng minh
+cả 3 test luật cờ mới và bài test kiến trúc `ArchitectureTest` đều báo `SUCCESS` trước khi
+thực thi lệnh commit.
+```
+

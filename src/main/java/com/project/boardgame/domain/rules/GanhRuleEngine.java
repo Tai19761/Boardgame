@@ -47,6 +47,59 @@ public class GanhRuleEngine implements GameRuleEngine {
         return true;
     }
 
+    @Override
+    public BoardState executeMove(BoardState board, MoveStep move, Player player) {
+        if (!isValidMove(board, move, player)) {
+            throw new IllegalArgumentException("Invalid move");
+        }
+
+        java.util.Map<Position, Piece> newPieces = new java.util.HashMap<>(board.pieces());
+        
+        // Move piece
+        newPieces.remove(move.from());
+        newPieces.put(move.to(), new Piece(player));
+
+        Position to = move.to();
+        Player opponent = (player == Player.PLAYER_1) ? Player.PLAYER_2 : Player.PLAYER_1;
+
+        // Check horizontal Ganh
+        checkAndApplyGanh(newPieces, player, opponent, 
+            new Position(to.x() - 1, to.y()), 
+            new Position(to.x() + 1, to.y()));
+
+        // Check vertical Ganh
+        checkAndApplyGanh(newPieces, player, opponent, 
+            new Position(to.x(), to.y() - 1), 
+            new Position(to.x(), to.y() + 1));
+
+        // Check diagonal Ganh (only if target cell has diagonals)
+        if ((to.x() + to.y()) % 2 == 0) {
+            checkAndApplyGanh(newPieces, player, opponent, 
+                new Position(to.x() - 1, to.y() - 1), 
+                new Position(to.x() + 1, to.y() + 1));
+            
+            checkAndApplyGanh(newPieces, player, opponent, 
+                new Position(to.x() - 1, to.y() + 1), 
+                new Position(to.x() + 1, to.y() - 1));
+        }
+
+        return new BoardState(newPieces);
+    }
+
+    private void checkAndApplyGanh(java.util.Map<Position, Piece> pieces, Player player, Player opponent, Position p1, Position p2) {
+        if (isWithinBounds(p1) && isWithinBounds(p2)) {
+            Piece piece1 = pieces.get(p1);
+            Piece piece2 = pieces.get(p2);
+            
+            if (piece1 != null && piece1.player() == opponent && 
+                piece2 != null && piece2.player() == opponent) {
+                // Apply Ganh: convert opponent pieces
+                pieces.put(p1, new Piece(player));
+                pieces.put(p2, new Piece(player));
+            }
+        }
+    }
+
     private boolean isWithinBounds(Position p) {
         return p.x() >= 0 && p.x() <= 4 && p.y() >= 0 && p.y() <= 4;
     }

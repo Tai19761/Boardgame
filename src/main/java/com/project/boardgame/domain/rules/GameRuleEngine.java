@@ -6,4 +6,5 @@ import com.project.boardgame.domain.models.Player;
 
 public interface GameRuleEngine {
     boolean isValidMove(BoardState board, MoveStep move, Player player);
+    BoardState executeMove(BoardState board, MoveStep move, Player player);
 }
