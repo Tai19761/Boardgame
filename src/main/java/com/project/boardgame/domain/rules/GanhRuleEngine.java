@@ -44,6 +44,13 @@ public class GanhRuleEngine implements GameRuleEngine {
             }
         }
 
+        // Enforce mandatory Gánh (Mở trap)
+        if (hasAnyGanhMove(board, player)) {
+            if (!moveResultsInGanh(board, move, player)) {
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -168,5 +175,62 @@ public class GanhRuleEngine implements GameRuleEngine {
 
     private boolean isWithinBounds(Position p) {
         return p.x() >= 0 && p.x() <= 4 && p.y() >= 0 && p.y() <= 4;
+    }
+
+    private boolean moveResultsInGanh(BoardState board, MoveStep move, Player player) {
+        Position to = move.to();
+        Player opponent = (player == Player.PLAYER_1) ? Player.PLAYER_2 : Player.PLAYER_1;
+        
+        java.util.Map<Position, Piece> pieces = board.pieces();
+        
+        // 1. Horizontal
+        if (isOpponent(pieces, new Position(to.x() - 1, to.y()), opponent) &&
+            isOpponent(pieces, new Position(to.x() + 1, to.y()), opponent)) {
+            return true;
+        }
+        
+        // 2. Vertical
+        if (isOpponent(pieces, new Position(to.x(), to.y() - 1), opponent) &&
+            isOpponent(pieces, new Position(to.x(), to.y() + 1), opponent)) {
+            return true;
+        }
+        
+        // 3. Diagonal
+        if ((to.x() + to.y()) % 2 == 0) {
+            if (isOpponent(pieces, new Position(to.x() - 1, to.y() - 1), opponent) &&
+                isOpponent(pieces, new Position(to.x() + 1, to.y() + 1), opponent)) {
+                return true;
+            }
+            if (isOpponent(pieces, new Position(to.x() - 1, to.y() + 1), opponent) &&
+                isOpponent(pieces, new Position(to.x() + 1, to.y() - 1), opponent)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    private boolean isOpponent(java.util.Map<Position, Piece> pieces, Position p, Player opponent) {
+        if (!isWithinBounds(p)) return false;
+        Piece piece = pieces.get(p);
+        return piece != null && piece.player() == opponent;
+    }
+
+    private boolean hasAnyGanhMove(BoardState board, Player player) {
+        java.util.Map<Position, Piece> pieces = board.pieces();
+        for (java.util.Map.Entry<Position, Piece> entry : pieces.entrySet()) {
+            if (entry.getValue().player() == player) {
+                Position from = entry.getKey();
+                for (Position to : getAdjacentPositions(from)) {
+                    if (!pieces.containsKey(to)) {
+                        MoveStep move = new MoveStep(from, to);
+                        if (moveResultsInGanh(board, move, player)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 }

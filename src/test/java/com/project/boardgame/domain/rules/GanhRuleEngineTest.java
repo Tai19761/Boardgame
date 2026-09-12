@@ -218,4 +218,30 @@ class GanhRuleEngineTest {
         // Assert
         assertEquals(Player.PLAYER_1, newBoard.pieces().get(to).player(), "Player piece should not be captured by suicide (Mở)");
     }
+
+    @Test
+    void shouldEnforceMandatoryGanhMove() {
+        // Arrange
+        // P1 has a piece at (2,1) that can move to (2,2) to Gánh P2 at (1,2) and (3,2).
+        // P1 also has a piece at (0,0) that can move to (1,0) (not a Gánh).
+        Position ganhFrom = new Position(2, 1);
+        Position ganhTo = new Position(2, 2);
+        Position normalFrom = new Position(0, 0);
+        Position normalTo = new Position(1, 0);
+        
+        pieces.put(ganhFrom, new Piece(Player.PLAYER_1));
+        pieces.put(normalFrom, new Piece(Player.PLAYER_1));
+        
+        pieces.put(new Position(1, 2), new Piece(Player.PLAYER_2));
+        pieces.put(new Position(3, 2), new Piece(Player.PLAYER_2));
+        
+        BoardState board = new BoardState(pieces);
+        
+        MoveStep ganhMove = new MoveStep(ganhFrom, ganhTo);
+        MoveStep normalMove = new MoveStep(normalFrom, normalTo);
+
+        // Act & Assert
+        assertTrue(ruleEngine.isValidMove(board, ganhMove, Player.PLAYER_1), "Ganh move should be valid");
+        assertFalse(ruleEngine.isValidMove(board, normalMove, Player.PLAYER_1), "Normal move should be invalid due to mandatory Ganh");
+    }
 }
