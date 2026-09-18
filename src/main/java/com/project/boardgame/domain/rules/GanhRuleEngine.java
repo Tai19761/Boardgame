@@ -9,6 +9,12 @@ import com.project.boardgame.domain.models.Position;
 public class GanhRuleEngine implements GameRuleEngine {
 
     @Override
+    public java.util.Optional<Player> checkWinner(BoardState board, Position lastMove) {
+        // TODO: Cần implement logic thắng thua cho Cờ Gánh (sẽ làm ở lệnh sau)
+        return java.util.Optional.empty();
+    }
+
+    @Override
     public boolean isValidMove(BoardState board, MoveStep move, Player player) {
         Position from = move.from();
         Position to = move.to();

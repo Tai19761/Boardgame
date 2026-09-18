@@ -17,8 +17,17 @@ public class CaroRuleEngine implements GameRuleEngine {
         if (to == null) {
             return false;
         }
+        
+        if (!isWithinBounds(to)) {
+            return false;
+        }
+        
         // Kiểm tra nước đi hợp lệ (chỉ được đặt quân vào ô trống)
         return !board.pieces().containsKey(to);
+    }
+
+    private boolean isWithinBounds(Position p) {
+        return p.x() >= 0 && p.x() <= 14 && p.y() >= 0 && p.y() <= 14;
     }
 
     @Override
@@ -34,10 +43,13 @@ public class CaroRuleEngine implements GameRuleEngine {
     /**
      * Kiểm tra điều kiện thắng (có 5 quân liên tiếp trên cùng hàng ngang, dọc hoặc chéo)
      */
-    public boolean checkWinCondition(BoardState board, Position lastMove, Player player) {
-        if (lastMove == null || board.pieces().get(lastMove) == null || board.pieces().get(lastMove).player() != player) {
-            return false;
+    @Override
+    public java.util.Optional<Player> checkWinner(BoardState board, Position lastMove) {
+        if (lastMove == null || board.pieces().get(lastMove) == null) {
+            return java.util.Optional.empty();
         }
+
+        Player player = board.pieces().get(lastMove).player();
 
         int[][] directions = {
             {1, 0},  // Ngang
@@ -52,10 +64,10 @@ public class CaroRuleEngine implements GameRuleEngine {
             count += countPiecesInDirection(board, lastMove, player, -dir[0], -dir[1]);
 
             if (count >= 5) {
-                return true;
+                return java.util.Optional.of(player);
             }
         }
-        return false;
+        return java.util.Optional.empty();
     }
 
     private int countPiecesInDirection(BoardState board, Position start, Player player, int dx, int dy) {

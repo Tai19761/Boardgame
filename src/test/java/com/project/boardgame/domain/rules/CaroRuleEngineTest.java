@@ -42,6 +42,24 @@ class CaroRuleEngineTest {
     }
 
     @Test
+    void testIsValidMove_OutOfBounds_Negative_ReturnsFalse() {
+        Map<Position, Piece> pieces = new HashMap<>();
+        BoardState board = new BoardState(pieces);
+        MoveStep move = new MoveStep(null, new Position(-1, 5));
+
+        assertFalse(engine.isValidMove(board, move, Player.PLAYER_1));
+    }
+
+    @Test
+    void testIsValidMove_OutOfBounds_GreaterThan14_ReturnsFalse() {
+        Map<Position, Piece> pieces = new HashMap<>();
+        BoardState board = new BoardState(pieces);
+        MoveStep move = new MoveStep(null, new Position(5, 15));
+
+        assertFalse(engine.isValidMove(board, move, Player.PLAYER_1));
+    }
+
+    @Test
     void testExecuteMove_ValidMove_UpdatesBoard() {
         Map<Position, Piece> pieces = new HashMap<>();
         BoardState board = new BoardState(pieces);
@@ -78,7 +96,7 @@ class CaroRuleEngineTest {
         pieces.put(new Position(4, 0), new Piece(Player.PLAYER_1));
         BoardState board = new BoardState(pieces);
 
-        assertTrue(engine.checkWinCondition(board, new Position(2, 0), Player.PLAYER_1));
+        assertEquals(java.util.Optional.of(Player.PLAYER_1), engine.checkWinner(board, new Position(2, 0)));
     }
 
     @Test
@@ -92,7 +110,7 @@ class CaroRuleEngineTest {
         pieces.put(new Position(5, 5), new Piece(Player.PLAYER_2));
         BoardState board = new BoardState(pieces);
 
-        assertTrue(engine.checkWinCondition(board, new Position(5, 5), Player.PLAYER_2));
+        assertEquals(java.util.Optional.of(Player.PLAYER_2), engine.checkWinner(board, new Position(5, 5)));
     }
 
     @Test
@@ -106,7 +124,7 @@ class CaroRuleEngineTest {
         pieces.put(new Position(4, 4), new Piece(Player.PLAYER_1));
         BoardState board = new BoardState(pieces);
 
-        assertTrue(engine.checkWinCondition(board, new Position(3, 3), Player.PLAYER_1));
+        assertEquals(java.util.Optional.of(Player.PLAYER_1), engine.checkWinner(board, new Position(3, 3)));
     }
 
     @Test
@@ -120,7 +138,7 @@ class CaroRuleEngineTest {
         pieces.put(new Position(1, 5), new Piece(Player.PLAYER_2));
         BoardState board = new BoardState(pieces);
 
-        assertTrue(engine.checkWinCondition(board, new Position(2, 4), Player.PLAYER_2));
+        assertEquals(java.util.Optional.of(Player.PLAYER_2), engine.checkWinner(board, new Position(2, 4)));
     }
 
     @Test
@@ -133,6 +151,6 @@ class CaroRuleEngineTest {
         pieces.put(new Position(0, 3), new Piece(Player.PLAYER_1));
         BoardState board = new BoardState(pieces);
 
-        assertFalse(engine.checkWinCondition(board, new Position(0, 3), Player.PLAYER_1));
+        assertEquals(java.util.Optional.empty(), engine.checkWinner(board, new Position(0, 3)));
     }
 }
