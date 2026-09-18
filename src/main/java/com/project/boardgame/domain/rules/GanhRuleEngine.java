@@ -16,6 +16,10 @@ public class GanhRuleEngine implements GameRuleEngine {
 
     @Override
     public boolean isValidMove(BoardState board, MoveStep move, Player player) {
+        if (player != board.currentPlayer()) {
+            return false;
+        }
+        
         Position from = move.from();
         Position to = move.to();
 
@@ -99,7 +103,8 @@ public class GanhRuleEngine implements GameRuleEngine {
         // Apply Chẹt (Bao vây) logic
         applyChet(newPieces, player, opponent);
 
-        return new BoardState(newPieces);
+        Player nextPlayer = player == Player.PLAYER_1 ? Player.PLAYER_2 : Player.PLAYER_1;
+        return new BoardState(newPieces, nextPlayer);
     }
 
     private void applyChet(java.util.Map<Position, Piece> pieces, Player player, Player opponent) {

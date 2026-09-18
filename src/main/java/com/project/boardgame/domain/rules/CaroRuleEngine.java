@@ -13,6 +13,10 @@ public class CaroRuleEngine implements GameRuleEngine {
 
     @Override
     public boolean isValidMove(BoardState board, MoveStep move, Player player) {
+        if (player != board.currentPlayer()) {
+            return false;
+        }
+        
         Position to = move.to();
         if (to == null) {
             return false;
@@ -37,7 +41,8 @@ public class CaroRuleEngine implements GameRuleEngine {
         }
         Map<Position, Piece> newPieces = new HashMap<>(board.pieces());
         newPieces.put(move.to(), new Piece(player));
-        return new BoardState(newPieces);
+        Player nextPlayer = player == Player.PLAYER_1 ? Player.PLAYER_2 : Player.PLAYER_1;
+        return new BoardState(newPieces, nextPlayer);
     }
 
     /**

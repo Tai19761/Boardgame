@@ -32,7 +32,7 @@ class GanhRuleEngineTest {
         Position from = new Position(2, 2);
         Position to = new Position(2, 3);
         pieces.put(from, new Piece(Player.PLAYER_1));
-        BoardState board = new BoardState(pieces);
+        BoardState board = new BoardState(pieces, Player.PLAYER_1);
         MoveStep move = new MoveStep(from, to);
 
         // Act & Assert
@@ -45,7 +45,7 @@ class GanhRuleEngineTest {
         Position from = new Position(1, 0); // Odd sum (1), no diagonal paths
         Position to = new Position(2, 1);   // Attempting diagonal
         pieces.put(from, new Piece(Player.PLAYER_1));
-        BoardState board = new BoardState(pieces);
+        BoardState board = new BoardState(pieces, Player.PLAYER_1);
         MoveStep move = new MoveStep(from, to);
 
         // Act & Assert
@@ -63,7 +63,7 @@ class GanhRuleEngineTest {
         Position to = new Position(2, 3);
         pieces.put(from, new Piece(Player.PLAYER_1));
         pieces.put(to, new Piece(Player.PLAYER_2)); // Occupied by opponent
-        BoardState board = new BoardState(pieces);
+        BoardState board = new BoardState(pieces, Player.PLAYER_1);
         MoveStep move = new MoveStep(from, to);
 
         // Act & Assert
@@ -78,7 +78,7 @@ class GanhRuleEngineTest {
         pieces.put(from, new Piece(Player.PLAYER_1));
         pieces.put(new Position(1, 2), new Piece(Player.PLAYER_2));
         pieces.put(new Position(3, 2), new Piece(Player.PLAYER_2));
-        BoardState board = new BoardState(pieces);
+        BoardState board = new BoardState(pieces, Player.PLAYER_1);
         MoveStep move = new MoveStep(from, to);
 
         // Act
@@ -99,7 +99,7 @@ class GanhRuleEngineTest {
         pieces.put(from, new Piece(Player.PLAYER_1));
         pieces.put(new Position(2, 1), new Piece(Player.PLAYER_2));
         pieces.put(new Position(2, 3), new Piece(Player.PLAYER_2));
-        BoardState board = new BoardState(pieces);
+        BoardState board = new BoardState(pieces, Player.PLAYER_1);
         MoveStep move = new MoveStep(from, to);
 
         // Act
@@ -118,7 +118,7 @@ class GanhRuleEngineTest {
         pieces.put(from, new Piece(Player.PLAYER_1));
         pieces.put(new Position(1, 3), new Piece(Player.PLAYER_2));
         pieces.put(new Position(3, 1), new Piece(Player.PLAYER_2));
-        BoardState board = new BoardState(pieces);
+        BoardState board = new BoardState(pieces, Player.PLAYER_1);
         MoveStep move = new MoveStep(from, to);
 
         // Act
@@ -137,7 +137,7 @@ class GanhRuleEngineTest {
         pieces.put(from, new Piece(Player.PLAYER_1));
         pieces.put(new Position(1, 2), new Piece(Player.PLAYER_2));
         // No opponent piece on (3, 2)
-        BoardState board = new BoardState(pieces);
+        BoardState board = new BoardState(pieces, Player.PLAYER_1);
         MoveStep move = new MoveStep(from, to);
 
         // Act
@@ -160,7 +160,7 @@ class GanhRuleEngineTest {
         pieces.put(new Position(1, 1), new Piece(Player.PLAYER_1));
         pieces.put(new Position(0, 0), new Piece(Player.PLAYER_2)); // To be chet
         
-        BoardState board = new BoardState(pieces);
+        BoardState board = new BoardState(pieces, Player.PLAYER_1);
         MoveStep move = new MoveStep(from, to);
 
         // Act
@@ -185,7 +185,7 @@ class GanhRuleEngineTest {
         pieces.put(new Position(0, 0), new Piece(Player.PLAYER_2));
         pieces.put(new Position(0, 1), new Piece(Player.PLAYER_2));
         
-        BoardState board = new BoardState(pieces);
+        BoardState board = new BoardState(pieces, Player.PLAYER_1);
         MoveStep move = new MoveStep(from, to);
 
         // Act
@@ -209,7 +209,7 @@ class GanhRuleEngineTest {
         pieces.put(new Position(1, 0), new Piece(Player.PLAYER_2));
         pieces.put(new Position(1, 1), new Piece(Player.PLAYER_2));
         
-        BoardState board = new BoardState(pieces);
+        BoardState board = new BoardState(pieces, Player.PLAYER_1);
         MoveStep move = new MoveStep(from, to);
 
         // Act
@@ -235,7 +235,7 @@ class GanhRuleEngineTest {
         pieces.put(new Position(1, 2), new Piece(Player.PLAYER_2));
         pieces.put(new Position(3, 2), new Piece(Player.PLAYER_2));
         
-        BoardState board = new BoardState(pieces);
+        BoardState board = new BoardState(pieces, Player.PLAYER_1);
         
         MoveStep ganhMove = new MoveStep(ganhFrom, ganhTo);
         MoveStep normalMove = new MoveStep(normalFrom, normalTo);
@@ -243,5 +243,26 @@ class GanhRuleEngineTest {
         // Act & Assert
         assertTrue(ruleEngine.isValidMove(board, ganhMove, Player.PLAYER_1), "Ganh move should be valid");
         assertFalse(ruleEngine.isValidMove(board, normalMove, Player.PLAYER_1), "Normal move should be invalid due to mandatory Ganh");
+    }
+
+    @Test
+    void shouldRejectMoveOnWrongTurn() {
+        Position from = new Position(2, 2);
+        Position to = new Position(2, 3);
+        pieces.put(from, new Piece(Player.PLAYER_1));
+        BoardState board = new BoardState(pieces, Player.PLAYER_2);
+        MoveStep move = new MoveStep(from, to);
+        assertFalse(ruleEngine.isValidMove(board, move, Player.PLAYER_1));
+    }
+
+    @Test
+    void shouldSwapPlayerAfterExecuteMove() {
+        Position from = new Position(2, 2);
+        Position to = new Position(2, 3);
+        pieces.put(from, new Piece(Player.PLAYER_1));
+        BoardState board = new BoardState(pieces, Player.PLAYER_1);
+        MoveStep move = new MoveStep(from, to);
+        BoardState newBoard = ruleEngine.executeMove(board, move, Player.PLAYER_1);
+        assertEquals(Player.PLAYER_2, newBoard.currentPlayer());
     }
 }
