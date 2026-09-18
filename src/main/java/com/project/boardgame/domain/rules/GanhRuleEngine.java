@@ -10,7 +10,18 @@ public class GanhRuleEngine implements GameRuleEngine {
 
     @Override
     public java.util.Optional<Player> checkWinner(BoardState board, Position lastMove) {
-        // TODO: Cần implement logic thắng thua cho Cờ Gánh (sẽ làm ở lệnh sau)
+        long p1Count = board.pieces().values().stream()
+                .filter(p -> p.player() == Player.PLAYER_1)
+                .count();
+        long p2Count = board.pieces().values().stream()
+                .filter(p -> p.player() == Player.PLAYER_2)
+                .count();
+
+        if (p1Count == 0 && p2Count > 0) {
+            return java.util.Optional.of(Player.PLAYER_2);
+        } else if (p2Count == 0 && p1Count > 0) {
+            return java.util.Optional.of(Player.PLAYER_1);
+        }
         return java.util.Optional.empty();
     }
 

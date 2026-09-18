@@ -265,4 +265,32 @@ class GanhRuleEngineTest {
         BoardState newBoard = ruleEngine.executeMove(board, move, Player.PLAYER_1);
         assertEquals(Player.PLAYER_2, newBoard.currentPlayer());
     }
+
+    @Test
+    void testCheckWinner_Player1HasNoPieces_ReturnsPlayer2() {
+        pieces.put(new Position(0, 0), new Piece(Player.PLAYER_2));
+        BoardState board = new BoardState(pieces, Player.PLAYER_1);
+        assertEquals(java.util.Optional.of(Player.PLAYER_2), ruleEngine.checkWinner(board, null));
+    }
+
+    @Test
+    void testCheckWinner_Player2HasNoPieces_ReturnsPlayer1() {
+        pieces.put(new Position(0, 0), new Piece(Player.PLAYER_1));
+        BoardState board = new BoardState(pieces, Player.PLAYER_1);
+        assertEquals(java.util.Optional.of(Player.PLAYER_1), ruleEngine.checkWinner(board, null));
+    }
+
+    @Test
+    void testCheckWinner_BothHavePieces_ReturnsEmpty() {
+        pieces.put(new Position(0, 0), new Piece(Player.PLAYER_1));
+        pieces.put(new Position(1, 1), new Piece(Player.PLAYER_2));
+        BoardState board = new BoardState(pieces, Player.PLAYER_1);
+        assertEquals(java.util.Optional.empty(), ruleEngine.checkWinner(board, null));
+    }
+
+    @Test
+    void testCheckWinner_EmptyBoard_ReturnsEmpty() {
+        BoardState board = new BoardState(pieces, Player.PLAYER_1);
+        assertEquals(java.util.Optional.empty(), ruleEngine.checkWinner(board, null));
+    }
 }
