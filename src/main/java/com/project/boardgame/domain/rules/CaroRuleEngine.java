@@ -8,8 +8,11 @@ import com.project.boardgame.domain.models.Position;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class CaroRuleEngine implements GameRuleEngine {
+
+    public static final int BOARD_SIZE = 15;
 
     @Override
     public boolean isValidMove(BoardState board, MoveStep move, Player player) {
@@ -31,7 +34,7 @@ public class CaroRuleEngine implements GameRuleEngine {
     }
 
     private boolean isWithinBounds(Position p) {
-        return p.x() >= 0 && p.x() <= 14 && p.y() >= 0 && p.y() <= 14;
+        return p.x() >= 0 && p.x() < BOARD_SIZE && p.y() >= 0 && p.y() < BOARD_SIZE;
     }
 
     @Override
@@ -45,13 +48,28 @@ public class CaroRuleEngine implements GameRuleEngine {
         return new BoardState(newPieces, nextPlayer);
     }
 
+    @Override
+    public boolean isGameOver(BoardState board) {
+        if (board.pieces().size() >= BOARD_SIZE * BOARD_SIZE) {
+            return true; // Bàn cờ đầy (Hòa nếu không ai thắng)
+        }
+        for (Position pos : board.pieces().keySet()) {
+            if (checkWinner(board, pos).isPresent()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Kiểm tra điều kiện thắng (có 5 quân liên tiếp trên cùng hàng ngang, dọc hoặc chéo)
      */
     @Override
-    public java.util.Optional<Player> checkWinner(BoardState board, Position lastMove) {
+    public Optional<Player> checkWinner(BoardState board, Position lastMove) {
         if (lastMove == null || board.pieces().get(lastMove) == null) {
-            return java.util.Optional.empty();
+            // Kết quả Optional.empty() chỉ có ý nghĩa xác định là 'Hòa' khi isGameOver(board) == true.
+            // Nếu isGameOver(board) == false, ván đấu vẫn đang tiếp diễn (ONGOING).
+            return Optional.empty();
         }
 
         Player player = board.pieces().get(lastMove).player();
@@ -69,10 +87,12 @@ public class CaroRuleEngine implements GameRuleEngine {
             count += countPiecesInDirection(board, lastMove, player, -dir[0], -dir[1]);
 
             if (count >= 5) {
-                return java.util.Optional.of(player);
+                return Optional.of(player);
             }
         }
-        return java.util.Optional.empty();
+        // Kết quả Optional.empty() chỉ có ý nghĩa xác định là 'Hòa' khi isGameOver(board) == true.
+        // Nếu isGameOver(board) == false, ván đấu vẫn đang tiếp diễn (ONGOING).
+        return Optional.empty();
     }
 
     private int countPiecesInDirection(BoardState board, Position start, Player player, int dx, int dy) {

@@ -6,10 +6,17 @@ import com.project.boardgame.domain.models.Piece;
 import com.project.boardgame.domain.models.Player;
 import com.project.boardgame.domain.models.Position;
 
+import java.util.Optional;
+
 public class GanhRuleEngine implements GameRuleEngine {
 
     @Override
-    public java.util.Optional<Player> checkWinner(BoardState board, Position lastMove) {
+    public boolean isGameOver(BoardState board) {
+        return checkWinner(board, null).isPresent();
+    }
+
+    @Override
+    public Optional<Player> checkWinner(BoardState board, Position lastMove) {
         long p1Count = board.pieces().values().stream()
                 .filter(p -> p.player() == Player.PLAYER_1)
                 .count();
@@ -18,11 +25,13 @@ public class GanhRuleEngine implements GameRuleEngine {
                 .count();
 
         if (p1Count == 0 && p2Count > 0) {
-            return java.util.Optional.of(Player.PLAYER_2);
+            return Optional.of(Player.PLAYER_2);
         } else if (p2Count == 0 && p1Count > 0) {
-            return java.util.Optional.of(Player.PLAYER_1);
+            return Optional.of(Player.PLAYER_1);
         }
-        return java.util.Optional.empty();
+        // Kết quả Optional.empty() chỉ có ý nghĩa xác định là 'Hòa' khi isGameOver(board) == true.
+        // Nếu isGameOver(board) == false, ván đấu vẫn đang tiếp diễn (ONGOING).
+        return Optional.empty();
     }
 
     @Override
