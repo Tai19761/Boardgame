@@ -170,4 +170,12 @@ class CaroRuleEngineTest {
         BoardState newBoard = engine.executeMove(board, move, Player.PLAYER_1);
         assertEquals(Player.PLAYER_2, newBoard.currentPlayer());
     }
+
+    @Test
+    void testInitializeBoard() {
+        BoardState initialBoard = engine.initializeBoard();
+        assertNotNull(initialBoard);
+        assertTrue(initialBoard.pieces().isEmpty(), "Initial Caro board should be empty");
+        assertEquals(Player.PLAYER_1, initialBoard.currentPlayer(), "Player 1 starts first");
+    }
 }

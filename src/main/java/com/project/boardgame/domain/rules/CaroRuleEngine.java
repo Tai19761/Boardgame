@@ -15,6 +15,11 @@ public class CaroRuleEngine implements GameRuleEngine {
     public static final int BOARD_SIZE = 15;
 
     @Override
+    public BoardState initializeBoard() {
+        return new BoardState(Map.of(), Player.PLAYER_1);
+    }
+
+    @Override
     public boolean isValidMove(BoardState board, MoveStep move, Player player) {
         if (player != board.currentPlayer()) {
             return false;

@@ -11,6 +11,32 @@ import java.util.Optional;
 public class GanhRuleEngine implements GameRuleEngine {
 
     @Override
+    public BoardState initializeBoard() {
+        java.util.Map<Position, Piece> pieces = new java.util.HashMap<>();
+        // Player 1 (8 pieces)
+        pieces.put(new Position(0, 0), new Piece(Player.PLAYER_1));
+        pieces.put(new Position(1, 0), new Piece(Player.PLAYER_1));
+        pieces.put(new Position(2, 0), new Piece(Player.PLAYER_1));
+        pieces.put(new Position(3, 0), new Piece(Player.PLAYER_1));
+        pieces.put(new Position(4, 0), new Piece(Player.PLAYER_1));
+        pieces.put(new Position(0, 1), new Piece(Player.PLAYER_1));
+        pieces.put(new Position(4, 1), new Piece(Player.PLAYER_1));
+        pieces.put(new Position(0, 2), new Piece(Player.PLAYER_1));
+
+        // Player 2 (8 pieces)
+        pieces.put(new Position(0, 4), new Piece(Player.PLAYER_2));
+        pieces.put(new Position(1, 4), new Piece(Player.PLAYER_2));
+        pieces.put(new Position(2, 4), new Piece(Player.PLAYER_2));
+        pieces.put(new Position(3, 4), new Piece(Player.PLAYER_2));
+        pieces.put(new Position(4, 4), new Piece(Player.PLAYER_2));
+        pieces.put(new Position(0, 3), new Piece(Player.PLAYER_2));
+        pieces.put(new Position(4, 3), new Piece(Player.PLAYER_2));
+        pieces.put(new Position(4, 2), new Piece(Player.PLAYER_2));
+
+        return new BoardState(pieces, Player.PLAYER_1);
+    }
+
+    @Override
     public boolean isGameOver(BoardState board) {
         return checkWinner(board, null).isPresent();
     }

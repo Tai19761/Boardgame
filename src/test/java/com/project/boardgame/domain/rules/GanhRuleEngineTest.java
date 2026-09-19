@@ -11,9 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class GanhRuleEngineTest {
 
@@ -292,5 +290,49 @@ class GanhRuleEngineTest {
     void testCheckWinner_EmptyBoard_ReturnsEmpty() {
         BoardState board = new BoardState(pieces, Player.PLAYER_1);
         assertEquals(java.util.Optional.empty(), ruleEngine.checkWinner(board, null));
+    }
+
+    @Test
+    void testInitializeBoard() {
+        BoardState initialBoard = ruleEngine.initializeBoard();
+        assertNotNull(initialBoard);
+        assertEquals(Player.PLAYER_1, initialBoard.currentPlayer());
+
+        Map<Position, Piece> pieceMap = initialBoard.pieces();
+        assertEquals(16, pieceMap.size(), "Initial Ganh board must have exactly 16 pieces");
+
+        // Player 1 positions (8 pieces)
+        Position[] p1Positions = new Position[] {
+            new Position(0, 0), new Position(1, 0), new Position(2, 0), new Position(3, 0), new Position(4, 0),
+            new Position(0, 1), new Position(4, 1),
+            new Position(0, 2)
+        };
+        for (Position pos : p1Positions) {
+            Piece piece = pieceMap.get(pos);
+            assertNotNull(piece, "Expected piece at " + pos);
+            assertEquals(Player.PLAYER_1, piece.player(), "Expected PLAYER_1 at " + pos);
+        }
+
+        // Player 2 positions (8 pieces)
+        Position[] p2Positions = new Position[] {
+            new Position(0, 4), new Position(1, 4), new Position(2, 4), new Position(3, 4), new Position(4, 4),
+            new Position(0, 3), new Position(4, 3),
+            new Position(4, 2)
+        };
+        for (Position pos : p2Positions) {
+            Piece piece = pieceMap.get(pos);
+            assertNotNull(piece, "Expected piece at " + pos);
+            assertEquals(Player.PLAYER_2, piece.player(), "Expected PLAYER_2 at " + pos);
+        }
+
+        // Empty positions (9 cells)
+        Position[] emptyPositions = new Position[] {
+            new Position(1, 1), new Position(2, 1), new Position(3, 1),
+            new Position(1, 2), new Position(2, 2), new Position(3, 2),
+            new Position(1, 3), new Position(2, 3), new Position(3, 3)
+        };
+        for (Position pos : emptyPositions) {
+            assertNull(pieceMap.get(pos), "Expected empty cell at " + pos);
+        }
     }
 }

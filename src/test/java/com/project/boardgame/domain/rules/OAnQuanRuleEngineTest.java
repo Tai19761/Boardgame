@@ -43,6 +43,23 @@ class OAnQuanRuleEngineTest {
     }
 
     @Test
+    void testInitializeBoard_CallsCreateInitialBoard() {
+        BoardState board = engine.initializeBoard();
+        assertNotNull(board);
+        assertEquals(Player.PLAYER_1, board.currentPlayer());
+        assertEquals(0, board.player1Score());
+        assertEquals(0, board.player2Score());
+        assertEquals(10, board.pieceCounts().get(OAnQuanRuleEngine.POSITIONS[0]));
+        assertEquals(10, board.pieceCounts().get(OAnQuanRuleEngine.POSITIONS[6]));
+        for (int i = 1; i <= 5; i++) {
+            assertEquals(5, board.pieceCounts().get(OAnQuanRuleEngine.POSITIONS[i]));
+        }
+        for (int i = 7; i <= 11; i++) {
+            assertEquals(5, board.pieceCounts().get(OAnQuanRuleEngine.POSITIONS[i]));
+        }
+    }
+
+    @Test
     void testIsValidMove_TurnValidation() {
         BoardState board = OAnQuanRuleEngine.createInitialBoard();
         MoveStep validP1Move = new MoveStep(OAnQuanRuleEngine.POSITIONS[1], OAnQuanRuleEngine.POSITIONS[2]);

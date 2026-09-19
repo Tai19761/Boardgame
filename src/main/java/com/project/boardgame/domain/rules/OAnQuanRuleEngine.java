@@ -68,6 +68,11 @@ public class OAnQuanRuleEngine implements GameRuleEngine {
     }
 
     @Override
+    public BoardState initializeBoard() {
+        return createInitialBoard();
+    }
+
+    @Override
     public boolean isValidMove(BoardState board, MoveStep move, Player player) {
         if (player != board.currentPlayer()) {
             return false;

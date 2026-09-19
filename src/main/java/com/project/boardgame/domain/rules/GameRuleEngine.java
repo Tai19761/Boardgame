@@ -8,6 +8,11 @@ import com.project.boardgame.domain.models.Position;
 import java.util.Optional;
 
 public interface GameRuleEngine {
+    /**
+     * Khởi tạo bàn cờ ban đầu theo quy chuẩn của từng loại trò chơi.
+     */
+    BoardState initializeBoard();
+
     boolean isValidMove(BoardState board, MoveStep move, Player player);
     BoardState executeMove(BoardState board, MoveStep move, Player player);
 
