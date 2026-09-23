@@ -9,6 +9,11 @@ public record BoardState(
     int player2Score,
     Player currentPlayer
 ) {
+    public BoardState {
+        pieces = Map.copyOf(pieces);
+        pieceCounts = Map.copyOf(pieceCounts);
+    }
+
     public BoardState(Map<Position, Piece> pieces, Player currentPlayer) {
         this(pieces, Map.of(), 0, 0, currentPlayer);
     }
