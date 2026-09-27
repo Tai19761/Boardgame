@@ -31,6 +31,10 @@ public class Room {
         this.matchEngine.startMatch(this.ruleEngine);
     }
 
+    public void finishRoom() {
+        this.roomStatus = RoomStatus.FINISHED;
+    }
+
     public String getRoomId() {
         return roomId;
     }

@@ -7,6 +7,9 @@ import com.project.boardgame.domain.rules.GameRuleEngine;
 import com.project.boardgame.domain.rules.GanhRuleEngine;
 import com.project.boardgame.domain.rules.OAnQuanRuleEngine;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class DefaultGameRuleEngineFactory implements GameRuleEngineFactory {
 
     @Override

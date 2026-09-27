@@ -1,46 +1,130 @@
 package com.project.boardgame.application.services;
 
 import com.project.boardgame.application.models.GameType;
+import com.project.boardgame.application.models.PlayerDisconnectInfo;
 import com.project.boardgame.application.models.Room;
 import com.project.boardgame.application.models.RoomStatus;
 import com.project.boardgame.application.ports.GameRuleEngineFactory;
 import com.project.boardgame.domain.rules.GameRuleEngine;
+import org.springframework.stereotype.Service;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
+@Service
 public class RoomManagerService {
 
     private final GameRuleEngineFactory ruleEngineFactory;
     private final Map<String, Room> rooms = new ConcurrentHashMap<>();
+    private final Map<String, String> playerToRoomMap = new ConcurrentHashMap<>();
 
     public RoomManagerService(GameRuleEngineFactory ruleEngineFactory) {
         this.ruleEngineFactory = ruleEngineFactory;
     }
 
     public String createRoom(String playerId, GameType gameType) {
-        GameRuleEngine engine = ruleEngineFactory.create(gameType);
-        MatchEngineService matchEngine = new MatchEngineService();
-        Room room = new Room(playerId, gameType, engine, matchEngine);
-        rooms.put(room.getRoomId(), room);
-        return room.getRoomId();
+        if (playerToRoomMap.putIfAbsent(playerId, "PENDING") != null) {
+            throw new IllegalStateException("Người chơi đang ở trong phòng khác hoặc đang tạo phòng");
+        }
+
+        try {
+            GameRuleEngine engine = ruleEngineFactory.create(gameType);
+            MatchEngineService matchEngine = new MatchEngineService();
+            Room room = new Room(playerId, gameType, engine, matchEngine);
+            rooms.put(room.getRoomId(), room);
+            playerToRoomMap.put(playerId, room.getRoomId());
+            return room.getRoomId();
+        } catch (Exception e) {
+            playerToRoomMap.remove(playerId, "PENDING");
+            throw e;
+        }
     }
 
     public Room joinRoom(String roomId, String playerId) {
-        Room joinedRoom = rooms.computeIfPresent(roomId, (id, room) -> {
-            if (room.getRoomStatus() != RoomStatus.WAITING || room.getGuestId() != null) {
-                throw new RoomJoinException("Room is full or already started");
-            }
-            room.joinGuest(playerId);
-            return room;
-        });
-
-        if (joinedRoom == null) {
-            throw new RoomJoinException("Room not found");
+        if (playerToRoomMap.putIfAbsent(playerId, "PENDING") != null) {
+            throw new IllegalStateException("Người chơi đang ở trong phòng khác hoặc đang vào phòng");
         }
 
+        Room joinedRoom;
+        try {
+            joinedRoom = rooms.computeIfPresent(roomId, (id, room) -> {
+                if (room.getRoomStatus() != RoomStatus.WAITING || room.getGuestId() != null) {
+                    throw new RoomJoinException("Room is full or already started");
+                }
+                room.joinGuest(playerId);
+                return room;
+            });
+
+            if (joinedRoom == null) {
+                throw new RoomJoinException("Room not found");
+            }
+        } catch (Exception e) {
+            playerToRoomMap.remove(playerId, "PENDING");
+            throw e;
+        }
+
+        playerToRoomMap.put(playerId, roomId);
         return joinedRoom;
+    }
+
+    public Optional<PlayerDisconnectInfo> handlePlayerDisconnect(String playerId) {
+        String roomId = playerToRoomMap.remove(playerId);
+        if (roomId == null || "PENDING".equals(roomId)) {
+            return Optional.empty();
+        }
+
+        AtomicReference<PlayerDisconnectInfo> disconnectInfoRef = new AtomicReference<>();
+
+        rooms.computeIfPresent(roomId, (id, room) -> {
+            RoomStatus status = room.getRoomStatus();
+            if (status == RoomStatus.WAITING) {
+                disconnectInfoRef.set(new PlayerDisconnectInfo(
+                        roomId,
+                        RoomStatus.WAITING,
+                        playerId,
+                        null
+                ));
+                return null;
+            } else if (status == RoomStatus.PLAYING) {
+                String opponentId = playerId.equals(room.getHostId())
+                        ? room.getGuestId()
+                        : room.getHostId();
+                disconnectInfoRef.set(new PlayerDisconnectInfo(
+                        roomId,
+                        RoomStatus.PLAYING,
+                        playerId,
+                        opponentId
+                ));
+                return null;
+            }
+            return null;
+        });
+
+        PlayerDisconnectInfo info = disconnectInfoRef.get();
+        if (info != null && info.opponentId() != null) {
+            playerToRoomMap.remove(info.opponentId());
+        }
+
+        return Optional.ofNullable(info);
+    }
+
+    public void removePlayerMappings(String hostId, String guestId) {
+        if (hostId != null) {
+            playerToRoomMap.remove(hostId);
+        }
+        if (guestId != null) {
+            playerToRoomMap.remove(guestId);
+        }
+    }
+
+    public void removeRoom(String roomId) {
+        rooms.remove(roomId);
+    }
+
+    public Optional<String> getRoomIdByPlayer(String playerId) {
+        return Optional.ofNullable(playerToRoomMap.get(playerId));
     }
 
     public Optional<Room> getRoom(String roomId) {
