@@ -37,7 +37,8 @@ export class WebSocketService {
             if (roomId) {
               // BẮT BUỘC subscribe /topic/match/{roomId} NGAY LẬP TỨC để lắng nghe cập nhật bàn cờ
               this.subscribeToMatch(roomId);
-              // Sau đó mới lưu roomId vào Zustand
+              // Lưu myPlayer = 'PLAYER_1' và roomId vào Zustand
+              useGameStore.getState().setMyPlayer('PLAYER_1');
               useGameStore.getState().setRoomId(roomId);
             }
           } catch (err) {
@@ -165,7 +166,8 @@ export class WebSocketService {
       body: JSON.stringify({ roomId: cleanRoomId }),
     });
 
-    // 3. Cập nhật roomId vào Zustand
+    // 3. Cập nhật myPlayer = 'PLAYER_2' và roomId vào Zustand
+    useGameStore.getState().setMyPlayer('PLAYER_2');
     useGameStore.getState().setRoomId(cleanRoomId);
   }
 

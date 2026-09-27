@@ -34,11 +34,13 @@ export interface GameStoreState {
   roomId: string | null;
   errorMessage: string | null;
   gameState: GameStateResponse | null;
+  myPlayer: Player | null;
 
   setIsConnected: (connected: boolean) => void;
   setRoomId: (roomId: string | null) => void;
   setErrorMessage: (message: string | null) => void;
   setGameState: (gameState: GameStateResponse | null) => void;
+  setMyPlayer: (player: Player | null) => void;
   clearError: () => void;
   resetGame: () => void;
 }
@@ -48,11 +50,13 @@ export const useGameStore = create<GameStoreState>((set) => ({
   roomId: null,
   errorMessage: null,
   gameState: null,
+  myPlayer: null,
 
   setIsConnected: (connected: boolean) => set({ isConnected: connected }),
   setRoomId: (roomId: string | null) => set({ roomId }),
   setErrorMessage: (message: string | null) => set({ errorMessage: message }),
   setGameState: (gameState: GameStateResponse | null) => set({ gameState }),
+  setMyPlayer: (player: Player | null) => set({ myPlayer: player }),
   clearError: () => set({ errorMessage: null }),
-  resetGame: () => set({ roomId: null, gameState: null, errorMessage: null }),
+  resetGame: () => set({ roomId: null, gameState: null, errorMessage: null, myPlayer: null }),
 }));
