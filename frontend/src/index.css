@@ -1,0 +1,18 @@
+body {
+  margin: 0;
+  padding: 16px;
+  font-family: monospace, sans-serif;
+  background-color: #ffffff;
+  color: #000000;
+}
+
+button {
+  padding: 6px 12px;
+  margin: 4px;
+  cursor: pointer;
+}
+
+input {
+  padding: 6px 8px;
+  margin: 4px;
+}
