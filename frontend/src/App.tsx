@@ -18,8 +18,8 @@ export default function App() {
     };
   }, []);
 
-  const handleCreateRoom = () => {
-    webSocketService.createRoom('CARO');
+  const handleCreateRoom = (gameType: 'CARO' | 'GANH' = 'CARO') => {
+    webSocketService.createRoom(gameType);
   };
 
   const handleJoinRoom = () => {
@@ -34,7 +34,7 @@ export default function App() {
     <main className="min-h-screen bg-stone-100 text-stone-900 p-4 font-mono">
       <header className="max-w-[720px] mx-auto mb-4 border-b-2 border-stone-800 pb-3 flex items-center justify-between">
         <h1 className="text-xl sm:text-2xl font-black uppercase tracking-wide text-stone-900">
-          Cờ Dân Gian - Ca-rô
+          Cờ Dân Gian
         </h1>
         <div className="text-sm font-semibold flex items-center gap-2">
           <span className="text-stone-600">Máy chủ:</span>
@@ -49,7 +49,7 @@ export default function App() {
           <div className="mb-6 border-b border-stone-400 pb-4">
             <h2 className="text-lg font-bold text-stone-900 uppercase">Sảnh Chờ Phòng Đấu</h2>
             <p className="text-sm text-stone-700 mt-1">
-              Khởi tạo phòng đấu Caro mới hoặc tham gia phòng bằng mã định danh.
+              Khởi tạo phòng đấu Caro hoặc Cờ Gánh mới, hoặc tham gia phòng bằng mã định danh.
             </p>
           </div>
 
@@ -75,16 +75,26 @@ export default function App() {
                 Tạo Phòng Mới
               </h3>
               <p className="text-sm text-stone-700 mb-4">
-                Khởi tạo phòng đấu Caro mới, hệ thống sẽ cấp mã phòng để chia sẻ cho đối thủ.
+                Chọn loại cờ và khởi tạo phòng đấu mới, hệ thống sẽ cấp mã phòng để chia sẻ cho đối thủ.
               </p>
-              <button
-                type="button"
-                onClick={handleCreateRoom}
-                disabled={!isConnected}
-                className="w-full sm:w-auto px-6 py-3 bg-stone-800 text-stone-100 font-bold border-2 border-stone-950 hover:bg-stone-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed uppercase"
-              >
-                + Tạo phòng Cờ Caro
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleCreateRoom('CARO')}
+                  disabled={!isConnected}
+                  className="w-full sm:w-auto px-6 py-3 bg-stone-800 text-stone-100 font-bold border-2 border-stone-950 hover:bg-stone-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed uppercase"
+                >
+                  + Tạo phòng Cờ Caro
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleCreateRoom('GANH')}
+                  disabled={!isConnected}
+                  className="w-full sm:w-auto px-6 py-3 bg-red-800 text-stone-100 font-bold border-2 border-red-950 hover:bg-red-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed uppercase"
+                >
+                  + Tạo phòng Cờ Gánh
+                </button>
+              </div>
             </div>
 
             {/* Khối 2: Vào Phòng Đã Có */}

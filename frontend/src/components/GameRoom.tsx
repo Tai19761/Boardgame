@@ -1,6 +1,7 @@
 import React from 'react';
 import { useGameStore } from '../store/useGameStore';
 import { CaroBoard } from './CaroBoard';
+import { GanhBoard } from './GanhBoard';
 
 export const GameRoom: React.FC = () => {
   const roomId = useGameStore((state) => state.roomId);
@@ -8,6 +9,7 @@ export const GameRoom: React.FC = () => {
   const myPlayer = useGameStore((state) => state.myPlayer);
   const errorMessage = useGameStore((state) => state.errorMessage);
   const clearError = useGameStore((state) => state.clearError);
+  const roomGameType = useGameStore((state) => state.roomGameType);
 
   const handleExit = () => {
     window.location.reload();
@@ -16,6 +18,15 @@ export const GameRoom: React.FC = () => {
   if (!roomId) {
     return null;
   }
+
+  // Xác định loại game từ Zustand store (có sẵn ngay khi tạo/join phòng)
+  const gameType = roomGameType || 'CARO';
+  const isGanh = gameType === 'GANH';
+
+  // Dynamic labels theo game type
+  const labelP1 = isGanh ? 'Đỏ' : 'X';
+  const labelP2 = isGanh ? 'Đen' : 'O';
+  const myLabel = myPlayer === 'PLAYER_1' ? labelP1 : myPlayer === 'PLAYER_2' ? labelP2 : '?';
 
   // Nếu !gameState, hiển thị trạng thái chờ hoặc tải
   if (!gameState) {
@@ -54,7 +65,7 @@ export const GameRoom: React.FC = () => {
             <strong className="font-extrabold">
               BẠN ĐANG CẦM QUÂN:{' '}
               <span className={`text-xl ${myPlayer === 'PLAYER_1' ? 'text-red-700' : 'text-stone-800'}`}>
-                {myPlayer === 'PLAYER_1' ? 'X' : 'O'}
+                {myLabel}
               </span>
             </strong>
           </p>
@@ -68,15 +79,15 @@ export const GameRoom: React.FC = () => {
     );
   }
 
-  // Format trạng thái ván đấu
+  // Format trạng thái ván đấu - dynamic label theo game type
   const formatStatus = () => {
     switch (gameState.matchStatus) {
       case 'ONGOING':
         return 'Đang diễn ra';
       case 'WIN_PLAYER_1':
-        return 'Người chơi 1 (X) Thắng';
+        return isGanh ? `Người chơi 1 (${labelP1}) Thắng` : 'Người chơi 1 (X) Thắng';
       case 'WIN_PLAYER_2':
-        return 'Người chơi 2 (O) Thắng';
+        return isGanh ? `Người chơi 2 (${labelP2}) Thắng` : 'Người chơi 2 (O) Thắng';
       case 'DRAW':
         return 'Hòa cờ';
       default:
@@ -88,8 +99,12 @@ export const GameRoom: React.FC = () => {
   const isWinner = gameState.winner === myPlayer;
   const isDraw = gameState.matchStatus === 'DRAW';
 
-  const currentTurnChar = gameState.currentPlayer === 'PLAYER_1' ? 'X' : gameState.currentPlayer === 'PLAYER_2' ? 'O' : '-';
-  const myChar = myPlayer === 'PLAYER_1' ? 'X' : myPlayer === 'PLAYER_2' ? 'O' : '?';
+  const currentTurnLabel =
+    gameState.currentPlayer === 'PLAYER_1'
+      ? labelP1
+      : gameState.currentPlayer === 'PLAYER_2'
+      ? labelP2
+      : '-';
 
   return (
     <div className="max-w-[720px] mx-auto my-4 p-4 border-4 border-stone-800 bg-[#e7dfd5] text-stone-900">
@@ -131,16 +146,16 @@ export const GameRoom: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-1 gap-2">
           <div className="text-base">
             <span>Lượt của: </span>
-            <span className={`font-extrabold text-lg ${currentTurnChar === 'X' ? 'text-red-700' : 'text-stone-800'}`}>
-              {currentTurnChar} {gameState.currentPlayer === myPlayer ? '(Lượt của bạn)' : '(Đối thủ)'}
+            <span className={`font-extrabold text-lg ${gameState.currentPlayer === 'PLAYER_1' ? 'text-red-700' : 'text-stone-800'}`}>
+              {currentTurnLabel} {gameState.currentPlayer === myPlayer ? '(Lượt của bạn)' : '(Đối thủ)'}
             </span>
           </div>
 
           <div className="text-base">
             <strong className="text-stone-900 font-extrabold">
               BẠN ĐANG CẦM QUÂN:{' '}
-              <span className={`text-xl ${myChar === 'X' ? 'text-red-700' : 'text-stone-800'}`}>
-                {myChar}
+              <span className={`text-xl ${myPlayer === 'PLAYER_1' ? 'text-red-700' : 'text-stone-800'}`}>
+                {myLabel}
               </span>
             </strong>
           </div>
@@ -166,8 +181,8 @@ export const GameRoom: React.FC = () => {
         </div>
       )}
 
-      {/* Bàn cờ Caro */}
-      <CaroBoard />
+      {/* Bàn cờ: động theo gameType */}
+      {isGanh ? <GanhBoard /> : <CaroBoard />}
     </div>
   );
 };

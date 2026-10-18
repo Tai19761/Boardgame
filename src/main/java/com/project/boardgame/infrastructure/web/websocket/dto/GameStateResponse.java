@@ -1,5 +1,6 @@
 package com.project.boardgame.infrastructure.web.websocket.dto;
 
+import com.project.boardgame.application.models.GameType;
 import com.project.boardgame.application.models.Room;
 import com.project.boardgame.application.services.MatchEngineService;
 import com.project.boardgame.application.services.MatchStatus;
@@ -18,13 +19,15 @@ public record GameStateResponse(
         Map<Position, Integer> pieceCounts,
         int player1Score,
         int player2Score,
-        Player winner
+        Player winner,
+        GameType gameType
 ) {
 
     public static GameStateResponse from(String roomId, Room room) {
         MatchEngineService engine = room.getMatchEngine();
         BoardState board = engine.getCurrentBoard();
         MatchStatus status = engine.getMatchStatus();
+        GameType gameType = room.getGameType();
 
         Player winner = switch (status) {
             case WIN_PLAYER_1 -> Player.PLAYER_1;
@@ -41,7 +44,8 @@ public record GameStateResponse(
                     Map.of(),
                     0,
                     0,
-                    null
+                    null,
+                    gameType
             );
         }
 
@@ -53,7 +57,8 @@ public record GameStateResponse(
                 board.pieceCounts(),
                 board.player1Score(),
                 board.player2Score(),
-                winner
+                winner,
+                gameType
         );
     }
 }

@@ -119,6 +119,7 @@ export class WebSocketService {
         try {
           const state: GameStateResponse = JSON.parse(message.body);
           useGameStore.getState().setGameState(state);
+          useGameStore.getState().setRoomGameType(state.gameType);
         } catch (err) {
           console.error('Lỗi parse trạng thái trận đấu:', err);
         }
@@ -138,6 +139,8 @@ export class WebSocketService {
       useGameStore.getState().setErrorMessage('Chưa kết nối tới máy chủ WebSocket');
       return;
     }
+
+    useGameStore.getState().setRoomGameType(gameType);
 
     this.client.publish({
       destination: '/app/room/create',
