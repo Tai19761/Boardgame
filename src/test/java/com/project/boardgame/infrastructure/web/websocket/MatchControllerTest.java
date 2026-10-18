@@ -99,6 +99,28 @@ class MatchControllerTest {
         assertEquals(roomId, gameState.roomId());
         assertEquals(MatchStatus.ONGOING, gameState.matchStatus());
         assertEquals(Player.PLAYER_1, gameState.currentPlayer());
+        assertEquals(GameType.CARO, gameState.gameType(), "Response phải chứa gameType CARO");
+    }
+
+    @Test
+    @DisplayName("Join phòng Cờ Gánh: broadcast GameStateResponse chứa gameType GANH")
+    void testJoinRoom_GanhGame_BroadcastsInitialStateWithGanhType() {
+        SimpMessageHeaderAccessor hostHeader = createHeaderAccessor("host-ganh");
+        CreateRoomResponse createResponse = controller.createRoom(new CreateRoomRequest(GameType.GANH), hostHeader);
+        String roomId = createResponse.roomId();
+
+        SimpMessageHeaderAccessor guestHeader = createHeaderAccessor("guest-ganh");
+        JoinRoomRequest joinRequest = new JoinRoomRequest(roomId);
+
+        controller.joinRoom(joinRequest, guestHeader);
+
+        assertEquals("/topic/match/" + roomId, messagingTemplate.lastDestination);
+        assertTrue(messagingTemplate.lastPayload instanceof GameStateResponse);
+
+        GameStateResponse gameState = (GameStateResponse) messagingTemplate.lastPayload;
+        assertEquals(roomId, gameState.roomId());
+        assertEquals(MatchStatus.ONGOING, gameState.matchStatus());
+        assertEquals(GameType.GANH, gameState.gameType(), "Response phải chứa gameType GANH");
     }
 
     @Test

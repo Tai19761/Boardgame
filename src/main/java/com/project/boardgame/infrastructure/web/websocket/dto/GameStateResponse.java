@@ -29,11 +29,12 @@ public record GameStateResponse(
         MatchStatus status = engine.getMatchStatus();
         GameType gameType = room.getGameType();
 
-        Player winner = switch (status) {
-            case WIN_PLAYER_1 -> Player.PLAYER_1;
-            case WIN_PLAYER_2 -> Player.PLAYER_2;
-            default -> null;
-        };
+        Player winner = null;
+        if (status == MatchStatus.WIN_PLAYER_1) {
+            winner = Player.PLAYER_1;
+        } else if (status == MatchStatus.WIN_PLAYER_2) {
+            winner = Player.PLAYER_2;
+        }
 
         if (board == null) {
             return new GameStateResponse(

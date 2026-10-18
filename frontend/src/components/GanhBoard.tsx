@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useGameStore } from '../store/useGameStore';
+import { useGameStore, type Piece } from '../store/useGameStore';
 import { webSocketService } from '../services/WebSocketService';
 
 interface Position {
@@ -15,7 +15,7 @@ export const GanhBoard: React.FC = () => {
   const pieces = gameState?.pieces || {};
 
   // Parse key chính xác theo định dạng server: "Position[x=0, y=0]"
-  const getPiece = (x: number, y: number) => {
+  const getPiece = (x: number, y: number): Piece | undefined => {
     return pieces[`Position[x=${x}, y=${y}]`];
   };
 

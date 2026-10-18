@@ -84,7 +84,7 @@ export default function App() {
                   disabled={!isConnected}
                   className="w-full sm:w-auto px-6 py-3 bg-stone-800 text-stone-100 font-bold border-2 border-stone-950 hover:bg-stone-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed uppercase"
                 >
-                  + Tạo phòng Cờ Caro
+                  + Tạo phòng Caro (15x15)
                 </button>
                 <button
                   type="button"
