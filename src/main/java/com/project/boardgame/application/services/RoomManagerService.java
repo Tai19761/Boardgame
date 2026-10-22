@@ -51,14 +51,14 @@ public class RoomManagerService {
         try {
             joinedRoom = rooms.computeIfPresent(roomId, (id, room) -> {
                 if (room.getRoomStatus() != RoomStatus.WAITING || room.getGuestId() != null) {
-                    throw new RoomJoinException("Room is full or already started");
+                    throw new RoomJoinException("Phòng đã đủ người hoặc ván đã bắt đầu");
                 }
                 room.joinGuest(playerId);
                 return room;
             });
 
             if (joinedRoom == null) {
-                throw new RoomJoinException("Room not found");
+                throw new RoomJoinException("Phòng không còn tồn tại");
             }
         } catch (Exception e) {
             playerToRoomMap.remove(playerId, "PENDING");

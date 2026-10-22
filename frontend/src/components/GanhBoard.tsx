@@ -10,6 +10,7 @@ interface Position {
 export const GanhBoard: React.FC = () => {
   const gameState = useGameStore((state) => state.gameState);
   const myPlayer = useGameStore((state) => state.myPlayer);
+  const opponentLeft = useGameStore((state) => state.opponentLeft);
   const [selectedPos, setSelectedPos] = useState<Position | null>(null);
 
   const pieces = gameState?.pieces || {};
@@ -23,7 +24,7 @@ export const GanhBoard: React.FC = () => {
     const isOngoing = gameState?.matchStatus === 'ONGOING';
     const isMyTurn = gameState?.currentPlayer === myPlayer;
 
-    if (!isOngoing || !isMyTurn) return;
+    if (!isOngoing || !isMyTurn || opponentLeft) return;
 
     const clickedPiece = getPiece(x, y);
 

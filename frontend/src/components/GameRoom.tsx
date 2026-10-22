@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGameStore } from '../store/useGameStore';
+import { webSocketService } from '../services/WebSocketService';
 import { CaroBoard } from './CaroBoard';
 import { GanhBoard } from './GanhBoard';
 
@@ -7,12 +8,23 @@ export const GameRoom: React.FC = () => {
   const roomId = useGameStore((state) => state.roomId);
   const gameState = useGameStore((state) => state.gameState);
   const myPlayer = useGameStore((state) => state.myPlayer);
+  const opponentLeft = useGameStore((state) => state.opponentLeft);
   const errorMessage = useGameStore((state) => state.errorMessage);
   const clearError = useGameStore((state) => state.clearError);
   const roomGameType = useGameStore((state) => state.roomGameType);
 
   const handleExit = () => {
-    window.location.reload();
+    const { gameState, opponentLeft } = useGameStore.getState();
+    const isGameOver = gameState !== null && gameState.matchStatus !== 'ONGOING';
+
+    if (isGameOver || opponentLeft) {
+      // Ván đã kết thúc hoặc đối thủ đã rời: server đã dọn phòng, gọi leaveRoom()
+      webSocketService.leaveRoom();
+    } else {
+      // Đang chờ đối thủ hoặc đang chơi: dùng reload() để ngắt kết nối, server kích hoạt handlePlayerDisconnect
+      // sau này thay bằng lệnh /app/room/leave khi làm nút đầu hàng
+      window.location.reload();
+    }
   };
 
   if (!roomId) {
@@ -83,11 +95,11 @@ export const GameRoom: React.FC = () => {
   const formatStatus = () => {
     switch (gameState.matchStatus) {
       case 'ONGOING':
-        return 'Đang diễn ra';
+        return opponentLeft ? 'Ván đã kết thúc' : 'Đang diễn ra';
       case 'WIN_PLAYER_1':
-        return isGanh ? `Người chơi 1 (${labelP1}) Thắng` : 'Người chơi 1 (X) Thắng';
+        return `Ván đã kết thúc - ${labelP1} thắng`;
       case 'WIN_PLAYER_2':
-        return isGanh ? `Người chơi 2 (${labelP2}) Thắng` : 'Người chơi 2 (O) Thắng';
+        return `Ván đã kết thúc - ${labelP2} thắng`;
       case 'DRAW':
         return 'Hòa cờ';
       default:
@@ -144,12 +156,14 @@ export const GameRoom: React.FC = () => {
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-1 gap-2">
-          <div className="text-base">
-            <span>Lượt của: </span>
-            <span className={`font-extrabold text-lg ${gameState.currentPlayer === 'PLAYER_1' ? 'text-red-700' : 'text-stone-800'}`}>
-              {currentTurnLabel} {gameState.currentPlayer === myPlayer ? '(Lượt của bạn)' : '(Đối thủ)'}
-            </span>
-          </div>
+          {!isGameOver && !opponentLeft && (
+            <div className="text-base">
+              <span>Lượt của: </span>
+              <span className={`font-extrabold text-lg ${gameState.currentPlayer === 'PLAYER_1' ? 'text-red-700' : 'text-stone-800'}`}>
+                {currentTurnLabel} {gameState.currentPlayer === myPlayer ? '(Lượt của bạn)' : '(Đối thủ)'}
+              </span>
+            </div>
+          )}
 
           <div className="text-base">
             <strong className="text-stone-900 font-extrabold">
@@ -162,27 +176,56 @@ export const GameRoom: React.FC = () => {
         </div>
       </div>
 
+      {/* Khung đối thủ rời ván */}
+      {opponentLeft && (
+        <div className="p-5 mb-4 text-center border-4 border-amber-800 bg-amber-100 text-stone-900">
+          <p className="text-lg sm:text-xl font-black text-amber-950 mb-4">
+            Đối thủ đã rời ván. Ván đấu kết thúc, bạn được xử thắng.
+          </p>
+          <button
+            type="button"
+            onClick={handleExit}
+            className="px-8 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-extrabold text-base border-2 border-stone-950 cursor-pointer uppercase transition-colors"
+          >
+            ⬅ Về sảnh
+          </button>
+        </div>
+      )}
+
       {/* Banner Tuyên bố Thắng / Thua / Hòa */}
       {isGameOver && (
-        <div className="p-4 mb-4 text-center border-2 border-stone-800 bg-stone-200">
-          {isDraw ? (
-            <span className="text-xl sm:text-2xl font-black text-stone-800 tracking-wide">
-              🤝 HÒA CỜ!
-            </span>
-          ) : isWinner ? (
-            <span className="text-xl sm:text-2xl font-black text-red-700 tracking-wide">
-              🏆 BẠN ĐÃ CHIẾN THẮNG!
-            </span>
-          ) : (
-            <span className="text-xl sm:text-2xl font-black text-stone-700 tracking-wide">
-              💀 BẠN ĐÃ THUA!
-            </span>
-          )}
+        <div className="p-5 mb-4 text-center border-4 border-stone-800 bg-stone-200">
+          <div className="mb-4">
+            {isDraw ? (
+              <span className="text-xl sm:text-2xl font-black text-stone-800 tracking-wide">
+                🤝 HÒA CỜ!
+              </span>
+            ) : isWinner ? (
+              <span className="text-xl sm:text-2xl font-black text-red-700 tracking-wide">
+                🏆 BẠN ĐÃ CHIẾN THẮNG!
+              </span>
+            ) : (
+              <span className="text-xl sm:text-2xl font-black text-stone-700 tracking-wide">
+                💀 BẠN ĐÃ THUA!
+              </span>
+            )}
+          </div>
+          <div>
+            <button
+              type="button"
+              onClick={handleExit}
+              className="px-8 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-extrabold text-base border-2 border-stone-950 cursor-pointer uppercase transition-colors"
+            >
+              ⬅ Về sảnh
+            </button>
+          </div>
         </div>
       )}
 
       {/* Bàn cờ: động theo gameType */}
-      {isGanh ? <GanhBoard /> : <CaroBoard />}
+      <div className={opponentLeft || isGameOver ? 'pointer-events-none opacity-60' : ''}>
+        {isGanh ? <GanhBoard /> : <CaroBoard />}
+      </div>
     </div>
   );
 };

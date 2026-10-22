@@ -43,7 +43,7 @@ public class WebSocketEventListener {
             if (info.previousStatus() == RoomStatus.PLAYING && info.opponentId() != null) {
                 log.info("Notifying room {} of player {} disconnection", info.roomId(), playerId);
                 messagingTemplate.convertAndSend(
-                        "/topic/match/" + info.roomId(),
+                        "/topic/match/" + info.roomId() + "/events",
                         new PlayerDisconnectedResponse(info.roomId(), playerId)
                 );
             }

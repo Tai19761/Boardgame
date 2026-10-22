@@ -5,6 +5,8 @@ export class WebSocketService {
   private static instance: WebSocketService;
   private client: Client;
   private matchSubscription: StompSubscription | null = null;
+  private eventsSubscription: StompSubscription | null = null;
+  private pendingRoomId: string | null = null;
   private disconnectTimer: number | null = null;
 
   private constructor() {
@@ -20,12 +22,19 @@ export class WebSocketService {
 
         // 1. Subscribe /user/queue/errors để hứng lỗi cá nhân
         this.client.subscribe('/user/queue/errors', (message) => {
+          let msg = message.body;
           try {
             const data = JSON.parse(message.body);
-            const msg = data.message || JSON.stringify(data);
-            useGameStore.getState().setErrorMessage(msg);
+            msg = data.message || JSON.stringify(data);
           } catch {
-            useGameStore.getState().setErrorMessage(message.body);
+            // Sử dụng raw body nếu không parse được JSON
+          }
+          useGameStore.getState().setErrorMessage(msg);
+
+          // Nếu nhận lỗi trên /user/queue/errors khi đang có pendingRoomId: hủy subscription, xóa pendingRoomId, ở lại sảnh và hiện lỗi
+          if (this.pendingRoomId) {
+            this.cleanupMatchSubscription();
+            this.pendingRoomId = null;
           }
         });
 
@@ -35,7 +44,7 @@ export class WebSocketService {
             const data = JSON.parse(message.body);
             const roomId = data.roomId;
             if (roomId) {
-              // BẮT BUỘC subscribe /topic/match/{roomId} NGAY LẬP TỨC để lắng nghe cập nhật bàn cờ
+              // BẮT BUỘC subscribe /topic/match/{roomId} và events NGAY LẬP TỨC để lắng nghe cập nhật bàn cờ
               this.subscribeToMatch(roomId);
               // Lưu myPlayer = 'PLAYER_1' và roomId vào Zustand
               useGameStore.getState().setMyPlayer('PLAYER_1');
@@ -103,6 +112,7 @@ export class WebSocketService {
     this.disconnectTimer = window.setTimeout(() => {
       if (this.client.active) {
         this.cleanupMatchSubscription();
+        this.pendingRoomId = null;
         this.client.deactivate();
         useGameStore.getState().setIsConnected(false);
       }
@@ -113,24 +123,59 @@ export class WebSocketService {
   public subscribeToMatch(roomId: string): void {
     this.cleanupMatchSubscription();
 
+    // Topic 1: Trạng thái trận đấu
     this.matchSubscription = this.client.subscribe(
       `/topic/match/${roomId}`,
       (message) => {
         try {
           const state: GameStateResponse = JSON.parse(message.body);
+
+          // Handler topic trạng thái phải kiểm tra payload có matchStatus và pieces trước khi setGameState (sai dạng thì bỏ qua + console.warn)
+          if (!state || typeof state !== 'object' || !state.matchStatus || !state.pieces) {
+            console.warn('Bỏ qua payload trạng thái không hợp lệ:', state);
+            return;
+          }
+
           useGameStore.getState().setGameState(state);
           useGameStore.getState().setRoomGameType(state.gameType);
+
+          // Chỉ khi nhận GameStateResponse đầu tiên của đúng roomId đó mới setRoomId + setMyPlayer('PLAYER_2')
+          if (this.pendingRoomId && this.pendingRoomId === state.roomId) {
+            useGameStore.getState().setRoomId(state.roomId);
+            useGameStore.getState().setMyPlayer('PLAYER_2');
+            this.pendingRoomId = null;
+          }
         } catch (err) {
           console.error('Lỗi parse trạng thái trận đấu:', err);
         }
       }
     );
+
+    // Topic 2: Sự kiện riêng của trận đấu (ví dụ: đối thủ rời phòng)
+    this.eventsSubscription = this.client.subscribe(
+      `/topic/match/${roomId}/events`,
+      (message) => {
+        try {
+          if (message.body) {
+            console.info('Nhận sự kiện trận đấu:', message.body);
+          }
+          // Handler topic events chỉ đặt cờ opponentLeft trong store, KHÔNG đụng gameState
+          useGameStore.getState().setOpponentLeft(true);
+        } catch (err) {
+          console.error('Lỗi parse sự kiện trận đấu:', err);
+        }
+      }
+    );
   }
 
-  private cleanupMatchSubscription(): void {
+  public cleanupMatchSubscription(): void {
     if (this.matchSubscription) {
       this.matchSubscription.unsubscribe();
       this.matchSubscription = null;
+    }
+    if (this.eventsSubscription) {
+      this.eventsSubscription.unsubscribe();
+      this.eventsSubscription = null;
     }
   }
 
@@ -160,7 +205,10 @@ export class WebSocketService {
       return;
     }
 
-    // 1. BẮT BUỘC subscribe /topic/match/{roomId} TRƯỚC
+    // Không setRoomId/setMyPlayer trong joinRoom. Lưu pendingRoomId
+    this.pendingRoomId = cleanRoomId;
+
+    // 1. BẮT BUỘC subscribe /topic/match/{roomId} và events TRƯỚC
     this.subscribeToMatch(cleanRoomId);
 
     // 2. Sau đó mới gửi message tới /app/room/join
@@ -168,10 +216,12 @@ export class WebSocketService {
       destination: '/app/room/join',
       body: JSON.stringify({ roomId: cleanRoomId }),
     });
+  }
 
-    // 3. Cập nhật myPlayer = 'PLAYER_2' và roomId vào Zustand
-    useGameStore.getState().setMyPlayer('PLAYER_2');
-    useGameStore.getState().setRoomId(cleanRoomId);
+  public leaveRoom(): void {
+    this.cleanupMatchSubscription();
+    this.pendingRoomId = null;
+    useGameStore.getState().resetGame();
   }
 
   public sendMove(moveRequest: MoveRequest): void {

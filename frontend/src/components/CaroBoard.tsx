@@ -7,6 +7,7 @@ const BOARD_SIZE = 15;
 export const CaroBoard: React.FC = () => {
   const gameState = useGameStore((state) => state.gameState);
   const myPlayer = useGameStore((state) => state.myPlayer);
+  const opponentLeft = useGameStore((state) => state.opponentLeft);
 
   const pieces = gameState?.pieces || {};
 
@@ -16,12 +17,12 @@ export const CaroBoard: React.FC = () => {
   };
 
   const handleCellClick = (x: number, y: number) => {
-    // Logic Click: Chỉ gọi sendMove khi matchStatus === 'ONGOING', ô đang trống, VÀ currentPlayer === myPlayer
+    // Logic Click: Chỉ gọi sendMove khi matchStatus === 'ONGOING', ô đang trống, currentPlayer === myPlayer và đối thủ chưa rời
     const isOngoing = gameState?.matchStatus === 'ONGOING';
     const isMyTurn = gameState?.currentPlayer === myPlayer;
     const isOccupied = !!getPiece(x, y);
 
-    if (!isOngoing || !isMyTurn || isOccupied) {
+    if (!isOngoing || !isMyTurn || isOccupied || opponentLeft) {
       return;
     }
 
@@ -43,7 +44,7 @@ export const CaroBoard: React.FC = () => {
 
   return (
     <div className="w-full max-w-[640px] mx-auto my-4">
-      {/* Bàn cờ 15x15: arbitrary grid-cols, viền gỗ đậm, nền đất/mộc, không bo góc, không shadow */}
+      {/* Bàn cờ 15x15: arbitrary grid-cols, viền gỗ đậm, nền đất/mộc, không bo góc */}
       <div className="border-4 border-stone-800 bg-[#e7dfd5] p-2">
         <div className="grid grid-cols-[repeat(15,minmax(0,1fr))] border border-stone-800">
           {cells.map(({ x, y }) => {

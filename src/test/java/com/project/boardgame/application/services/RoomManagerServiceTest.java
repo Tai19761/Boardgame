@@ -59,14 +59,14 @@ class RoomManagerServiceTest {
     }
 
     @Test
-    @DisplayName("Tham gia phòng không tồn tại: ném RoomJoinException với thông báo 'Room not found'")
+    @DisplayName("Tham gia phòng không tồn tại: ném RoomJoinException với thông báo 'Phòng không còn tồn tại'")
     void testJoinRoom_NotFound_ThrowsException() {
         RoomJoinException exception = assertThrows(
                 RoomJoinException.class,
                 () -> roomManager.joinRoom("non-existent-room-id", "guest-1")
         );
 
-        assertEquals("Room not found", exception.getMessage());
+        assertEquals("Phòng không còn tồn tại", exception.getMessage());
     }
 
     @Test
@@ -83,7 +83,7 @@ class RoomManagerServiceTest {
                 () -> roomManager.joinRoom(roomId, "guest-2")
         );
 
-        assertEquals("Room is full or already started", exception.getMessage());
+        assertEquals("Phòng đã đủ người hoặc ván đã bắt đầu", exception.getMessage());
 
         // Kiểm tra phòng vẫn giữ nguyên guest-1, không bị guest-2 ghi đè
         Room room = roomManager.getRoom(roomId).orElseThrow();
@@ -111,7 +111,7 @@ class RoomManagerServiceTest {
                     roomManager.joinRoom(roomId, guestId);
                     successCount.incrementAndGet();
                 } catch (RoomJoinException e) {
-                    if ("Room is full or already started".equals(e.getMessage())) {
+                    if ("Phòng đã đủ người hoặc ván đã bắt đầu".equals(e.getMessage())) {
                         failCount.incrementAndGet();
                     }
                 } catch (InterruptedException ignored) {

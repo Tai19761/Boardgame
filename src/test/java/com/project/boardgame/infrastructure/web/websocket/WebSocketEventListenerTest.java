@@ -67,7 +67,7 @@ class WebSocketEventListenerTest {
         SessionDisconnectEvent event = createDisconnectEvent("session-1", new StompPrincipal(hostId));
         eventListener.handleSessionDisconnect(event);
 
-        assertEquals("/topic/match/" + roomId, messagingTemplate.lastDestination);
+        assertEquals("/topic/match/" + roomId + "/events", messagingTemplate.lastDestination);
         assertNotNull(messagingTemplate.lastPayload);
         assertTrue(messagingTemplate.lastPayload instanceof PlayerDisconnectedResponse);
 
