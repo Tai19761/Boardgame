@@ -253,4 +253,48 @@ class MatchControllerTest {
         assertEquals("Lỗi hệ thống", r5.message());
         assertEquals("SYSTEM_ERROR", r5.errorType());
     }
+
+    @Test
+    @DisplayName("Tạo phòng O_AN_QUAN và vào phòng: trả về đúng GameType và pieceCounts")
+    void testCreateAndJoinRoom_OAnQuan_ReturnsCorrectGameTypeAndPieceCounts() {
+        SimpMessageHeaderAccessor hostHeader = createHeaderAccessor("host-oanquan");
+        CreateRoomResponse createResponse = controller.createRoom(new CreateRoomRequest(GameType.O_AN_QUAN), hostHeader);
+        String roomId = createResponse.roomId();
+
+        SimpMessageHeaderAccessor guestHeader = createHeaderAccessor("guest-oanquan");
+        controller.joinRoom(new JoinRoomRequest(roomId), guestHeader);
+
+        assertEquals("/topic/match/" + roomId, messagingTemplate.lastDestination);
+        assertTrue(messagingTemplate.lastPayload instanceof GameStateResponse);
+
+        GameStateResponse gameState = (GameStateResponse) messagingTemplate.lastPayload;
+        assertEquals(roomId, gameState.roomId());
+        assertEquals(MatchStatus.ONGOING, gameState.matchStatus());
+        assertEquals(GameType.O_AN_QUAN, gameState.gameType());
+        assertNotNull(gameState.pieceCounts());
+        assertEquals(12, gameState.pieceCounts().size(), "Ô Ăn Quan có 12 ô (2 quan + 10 dân)");
+    }
+
+    @Test
+    @DisplayName("Ô Ăn Quan: gửi nước đi bằng direction 'RIGHT' được dịch chính xác thành MoveStep và thực thi")
+    void testHandleMove_OAnQuan_WithDirection_TranslatesToMoveStepAndExecutes() {
+        SimpMessageHeaderAccessor hostHeader = createHeaderAccessor("host-oanquan");
+        CreateRoomResponse createResponse = controller.createRoom(new CreateRoomRequest(GameType.O_AN_QUAN), hostHeader);
+        String roomId = createResponse.roomId();
+
+        SimpMessageHeaderAccessor guestHeader = createHeaderAccessor("guest-oanquan");
+        controller.joinRoom(new JoinRoomRequest(roomId), guestHeader);
+
+        Principal hostPrincipal = new StompPrincipal("host-oanquan");
+        // P1 đi từ ô (1,1) sang PHẢI (direction = "RIGHT")
+        MoveRequest moveRequest = new MoveRequest(new Position(1, 1), null, "RIGHT");
+
+        controller.handleMove(roomId, moveRequest, hostPrincipal);
+
+        assertEquals("/topic/match/" + roomId, messagingTemplate.lastDestination);
+        GameStateResponse state = (GameStateResponse) messagingTemplate.lastPayload;
+        assertEquals(Player.PLAYER_2, state.currentPlayer(), "Lượt tiếp theo phải đổi sang PLAYER_2");
+        assertEquals(0, state.pieceCounts().get(new Position(1, 1)), "Ô xuất phát (1,1) phải hết sỏi");
+        assertEquals(11, state.pieceCounts().get(new Position(6, 0)), "Quan Phải (6,0) nhận 1 viên sỏi (10 + 1 = 11)");
+    }
 }

@@ -18,7 +18,7 @@ export default function App() {
     };
   }, []);
 
-  const handleCreateRoom = (gameType: 'CARO' | 'GANH' = 'CARO') => {
+  const handleCreateRoom = (gameType: 'CARO' | 'GANH' | 'O_AN_QUAN' = 'CARO') => {
     webSocketService.createRoom(gameType);
   };
 
@@ -93,6 +93,14 @@ export default function App() {
                   className="w-full sm:w-auto px-6 py-3 bg-red-800 text-stone-100 font-bold border-2 border-red-950 hover:bg-red-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed uppercase"
                 >
                   + Tạo phòng Cờ Gánh
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleCreateRoom('O_AN_QUAN')}
+                  disabled={!isConnected}
+                  className="w-full sm:w-auto px-6 py-3 bg-amber-800 text-stone-100 font-bold border-2 border-amber-950 hover:bg-amber-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed uppercase"
+                >
+                  + Tạo phòng Ô Ăn Quan
                 </button>
               </div>
             </div>

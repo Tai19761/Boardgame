@@ -3,6 +3,7 @@ import { useGameStore } from '../store/useGameStore';
 import { webSocketService } from '../services/WebSocketService';
 import { CaroBoard } from './CaroBoard';
 import { GanhBoard } from './GanhBoard';
+import { OAnQuanBoard } from './OAnQuanBoard';
 
 export const GameRoom: React.FC = () => {
   const roomId = useGameStore((state) => state.roomId);
@@ -34,10 +35,11 @@ export const GameRoom: React.FC = () => {
   // Xác định loại game từ Zustand store (có sẵn ngay khi tạo/join phòng)
   const gameType = roomGameType || 'CARO';
   const isGanh = gameType === 'GANH';
+  const isOAnQuan = gameType === 'O_AN_QUAN';
 
   // Dynamic labels theo game type
-  const labelP1 = isGanh ? 'Đỏ' : 'X';
-  const labelP2 = isGanh ? 'Đen' : 'O';
+  const labelP1 = isOAnQuan ? 'P1 (Dân dưới)' : isGanh ? 'Đỏ' : 'X';
+  const labelP2 = isOAnQuan ? 'P2 (Dân trên)' : isGanh ? 'Đen' : 'O';
   const myLabel = myPlayer === 'PLAYER_1' ? labelP1 : myPlayer === 'PLAYER_2' ? labelP2 : '?';
 
   // Nếu !gameState, hiển thị trạng thái chờ hoặc tải
@@ -174,6 +176,17 @@ export const GameRoom: React.FC = () => {
             </strong>
           </div>
         </div>
+
+        {isOAnQuan && (
+          <div className="flex items-center justify-between border-t border-stone-400 pt-2 mt-2 text-sm sm:text-base font-bold">
+            <div className="text-red-700">
+              Điểm P1: <span className="text-lg font-black">{gameState.player1Score}</span>
+            </div>
+            <div className="text-stone-800">
+              Điểm P2: <span className="text-lg font-black">{gameState.player2Score}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Khung đối thủ rời ván */}
@@ -224,7 +237,7 @@ export const GameRoom: React.FC = () => {
 
       {/* Bàn cờ: động theo gameType */}
       <div className={opponentLeft || isGameOver ? 'pointer-events-none opacity-60' : ''}>
-        {isGanh ? <GanhBoard /> : <CaroBoard />}
+        {isOAnQuan ? <OAnQuanBoard /> : isGanh ? <GanhBoard /> : <CaroBoard />}
       </div>
     </div>
   );

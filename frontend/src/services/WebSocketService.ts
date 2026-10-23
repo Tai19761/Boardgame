@@ -130,8 +130,8 @@ export class WebSocketService {
         try {
           const state: GameStateResponse = JSON.parse(message.body);
 
-          // Handler topic trạng thái phải kiểm tra payload có matchStatus và pieces trước khi setGameState (sai dạng thì bỏ qua + console.warn)
-          if (!state || typeof state !== 'object' || !state.matchStatus || !state.pieces) {
+          // Handler topic trạng thái phải kiểm tra payload có matchStatus và (pieces hoặc pieceCounts)
+          if (!state || typeof state !== 'object' || !state.matchStatus || (!state.pieces && !state.pieceCounts)) {
             console.warn('Bỏ qua payload trạng thái không hợp lệ:', state);
             return;
           }

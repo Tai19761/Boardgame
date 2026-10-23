@@ -10,7 +10,8 @@ export interface Position {
 
 export interface MoveRequest {
   from: Position | null;
-  to: Position;
+  to?: Position | null;
+  direction?: 'LEFT' | 'RIGHT' | string;
 }
 
 export interface Piece {
