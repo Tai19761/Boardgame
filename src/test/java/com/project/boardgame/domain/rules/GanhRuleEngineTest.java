@@ -218,7 +218,7 @@ class GanhRuleEngineTest {
     }
 
     @Test
-    void shouldEnforceMandatoryGanhMove() {
+    void shouldAllowNormalMoveEvenWhenGanhMoveIsAvailable() {
         // Arrange
         // P1 has a piece at (2,1) that can move to (2,2) to Gánh P2 at (1,2) and (3,2).
         // P1 also has a piece at (0,0) that can move to (1,0) (not a Gánh).
@@ -240,7 +240,7 @@ class GanhRuleEngineTest {
 
         // Act & Assert
         assertTrue(ruleEngine.isValidMove(board, ganhMove, Player.PLAYER_1), "Ganh move should be valid");
-        assertFalse(ruleEngine.isValidMove(board, normalMove, Player.PLAYER_1), "Normal move should be invalid due to mandatory Ganh");
+        assertTrue(ruleEngine.isValidMove(board, normalMove, Player.PLAYER_1), "Normal move should be valid even when Ganh move is available");
     }
 
     @Test
