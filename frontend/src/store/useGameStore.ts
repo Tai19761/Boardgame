@@ -39,6 +39,7 @@ export interface GameStoreState {
   myPlayer: Player | null;
   roomGameType: string | null;
   opponentLeft: boolean;
+  isBotMatch: boolean;
 
   setIsConnected: (connected: boolean) => void;
   setRoomId: (roomId: string | null) => void;
@@ -47,6 +48,7 @@ export interface GameStoreState {
   setMyPlayer: (player: Player | null) => void;
   setRoomGameType: (type: string | null) => void;
   setOpponentLeft: (opponentLeft: boolean) => void;
+  setIsBotMatch: (isBotMatch: boolean) => void;
   clearError: () => void;
   resetGame: () => void;
 }
@@ -59,6 +61,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
   myPlayer: null,
   roomGameType: null,
   opponentLeft: false,
+  isBotMatch: false,
 
   setIsConnected: (connected: boolean) => set({ isConnected: connected }),
   setRoomId: (roomId: string | null) => set({ roomId }),
@@ -67,6 +70,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
   setMyPlayer: (player: Player | null) => set({ myPlayer: player }),
   setRoomGameType: (type: string | null) => set({ roomGameType: type }),
   setOpponentLeft: (opponentLeft: boolean) => set({ opponentLeft }),
+  setIsBotMatch: (isBotMatch: boolean) => set({ isBotMatch }),
   clearError: () => set({ errorMessage: null }),
-  resetGame: () => set({ roomId: null, gameState: null, errorMessage: null, myPlayer: null, roomGameType: null, opponentLeft: false }),
+  resetGame: () => set({ roomId: null, gameState: null, errorMessage: null, myPlayer: null, roomGameType: null, opponentLeft: false, isBotMatch: false }),
 }));

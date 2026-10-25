@@ -7,6 +7,9 @@ import java.util.UUID;
 
 public class Room {
 
+    /** Định danh cố định của máy (Bot) trong phòng đấu với máy. */
+    public static final String BOT_ID = "BOT";
+
     private final String roomId;
     private final String hostId;
     private String guestId;
@@ -14,8 +17,13 @@ public class Room {
     private RoomStatus roomStatus;
     private final GameType gameType;
     private final GameRuleEngine ruleEngine;
+    private final boolean botMatch;
 
     public Room(String hostId, GameType gameType, GameRuleEngine ruleEngine, MatchEngineService matchEngine) {
+        this(hostId, gameType, ruleEngine, matchEngine, false);
+    }
+
+    private Room(String hostId, GameType gameType, GameRuleEngine ruleEngine, MatchEngineService matchEngine, boolean botMatch) {
         this.roomId = UUID.randomUUID().toString();
         this.hostId = hostId;
         this.guestId = null;
@@ -23,6 +31,17 @@ public class Room {
         this.ruleEngine = ruleEngine;
         this.matchEngine = matchEngine;
         this.roomStatus = RoomStatus.WAITING;
+        this.botMatch = botMatch;
+    }
+
+    /**
+     * Tạo phòng đấu với máy: guest là {@link #BOT_ID}, ván bắt đầu ngay (PLAYING / ONGOING),
+     * người chơi luôn cầm PLAYER_1 và đi trước.
+     */
+    public static Room createBotMatch(String hostId, GameType gameType, GameRuleEngine ruleEngine, MatchEngineService matchEngine) {
+        Room room = new Room(hostId, gameType, ruleEngine, matchEngine, true);
+        room.joinGuest(BOT_ID);
+        return room;
     }
 
     public void joinGuest(String guestId) {
@@ -61,5 +80,9 @@ public class Room {
 
     public GameRuleEngine getRuleEngine() {
         return ruleEngine;
+    }
+
+    public boolean isBotMatch() {
+        return botMatch;
     }
 }

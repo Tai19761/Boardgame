@@ -42,6 +42,30 @@ public class RoomManagerService {
         }
     }
 
+    /**
+     * Tạo phòng đấu với máy (chỉ hỗ trợ CARO). Phòng vào trạng thái PLAYING và ván ONGOING ngay,
+     * guestId = {@link Room#BOT_ID}. Bot không được ghi vào playerToRoomMap.
+     */
+    public Room createBotRoom(String playerId, GameType gameType) {
+        if (gameType != GameType.CARO) {
+            throw new IllegalArgumentException("Chế độ đấu với máy hiện chỉ hỗ trợ Cờ Caro");
+        }
+        if (playerToRoomMap.putIfAbsent(playerId, "PENDING") != null) {
+            throw new IllegalStateException("Người chơi đang ở trong phòng khác hoặc đang tạo phòng");
+        }
+
+        try {
+            GameRuleEngine engine = ruleEngineFactory.create(gameType);
+            Room room = Room.createBotMatch(playerId, gameType, engine, new MatchEngineService());
+            rooms.put(room.getRoomId(), room);
+            playerToRoomMap.put(playerId, room.getRoomId());
+            return room;
+        } catch (Exception e) {
+            playerToRoomMap.remove(playerId, "PENDING");
+            throw e;
+        }
+    }
+
     public Room joinRoom(String roomId, String playerId) {
         if (playerToRoomMap.putIfAbsent(playerId, "PENDING") != null) {
             throw new IllegalStateException("Người chơi đang ở trong phòng khác hoặc đang vào phòng");

@@ -13,6 +13,7 @@ export const GameRoom: React.FC = () => {
   const errorMessage = useGameStore((state) => state.errorMessage);
   const clearError = useGameStore((state) => state.clearError);
   const roomGameType = useGameStore((state) => state.roomGameType);
+  const isBotMatch = useGameStore((state) => state.isBotMatch);
 
   const handleExit = () => {
     const { gameState, opponentLeft } = useGameStore.getState();
@@ -120,6 +121,17 @@ export const GameRoom: React.FC = () => {
       ? labelP2
       : '-';
 
+  // Khóa bàn cờ khi không phải lượt của mình (không cập nhật lạc quan: chờ server broadcast)
+  const isNotMyTurn = gameState.currentPlayer !== myPlayer;
+  const isBotThinking = isBotMatch && !isGameOver && !opponentLeft && isNotMyTurn;
+  const opponentTag = isBotMatch ? '(Máy)' : '(Đối thủ)';
+  const boardLockClass =
+    opponentLeft || isGameOver
+      ? 'pointer-events-none opacity-60'
+      : isNotMyTurn
+      ? 'pointer-events-none'
+      : '';
+
   return (
     <div className="max-w-[720px] mx-auto my-4 p-4 border-4 border-stone-800 bg-[#e7dfd5] text-stone-900">
       {/* Hiển thị lỗi: thanh đỏ đậm, chữ trắng, có nút X để tắt */}
@@ -162,7 +174,7 @@ export const GameRoom: React.FC = () => {
             <div className="text-base">
               <span>Lượt của: </span>
               <span className={`font-extrabold text-lg ${gameState.currentPlayer === 'PLAYER_1' ? 'text-red-700' : 'text-stone-800'}`}>
-                {currentTurnLabel} {gameState.currentPlayer === myPlayer ? '(Lượt của bạn)' : '(Đối thủ)'}
+                {currentTurnLabel} {gameState.currentPlayer === myPlayer ? '(Lượt của bạn)' : opponentTag}
               </span>
             </div>
           )}
@@ -235,8 +247,21 @@ export const GameRoom: React.FC = () => {
         </div>
       )}
 
+      {/* Trạng thái Máy đang suy nghĩ (chỉ trong phòng đấu máy, khi đến lượt Bot) */}
+      {isBotThinking && (
+        <div
+          id="bot-thinking-indicator"
+          role="status"
+          aria-live="polite"
+          className="mb-3 px-4 py-2 border-2 border-emerald-950 bg-emerald-900 text-stone-100 font-bold text-sm sm:text-base flex items-center gap-3"
+        >
+          <span className="inline-block w-3 h-3 bg-emerald-300 animate-pulse" aria-hidden="true" />
+          Máy đang suy nghĩ…
+        </div>
+      )}
+
       {/* Bàn cờ: động theo gameType */}
-      <div className={opponentLeft || isGameOver ? 'pointer-events-none opacity-60' : ''}>
+      <div className={boardLockClass}>
         {isOAnQuan ? <OAnQuanBoard /> : isGanh ? <GanhBoard /> : <CaroBoard />}
       </div>
     </div>

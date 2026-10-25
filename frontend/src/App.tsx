@@ -22,6 +22,10 @@ export default function App() {
     webSocketService.createRoom(gameType);
   };
 
+  const handleCreateBotRoom = () => {
+    webSocketService.createBotRoom();
+  };
+
   const handleJoinRoom = () => {
     if (!inputRoomId.trim()) {
       useGameStore.getState().setErrorMessage('Vui lòng nhập mã phòng');
@@ -103,6 +107,25 @@ export default function App() {
                   + Tạo phòng Ô Ăn Quan
                 </button>
               </div>
+            </div>
+
+            {/* Khối 1b: Đấu với Máy */}
+            <div className="border-2 border-stone-800 bg-stone-200 p-5">
+              <h3 className="font-extrabold text-stone-900 text-base uppercase mb-1">
+                Đấu với Máy
+              </h3>
+              <p className="text-sm text-stone-700 mb-4">
+                Luyện tập Caro 15x15 với máy (Minimax + Alpha-Beta). Bạn cầm quân X và đi trước, ván bắt đầu ngay lập tức.
+              </p>
+              <button
+                id="create-bot-room-button"
+                type="button"
+                onClick={handleCreateBotRoom}
+                disabled={!isConnected}
+                className="w-full sm:w-auto px-6 py-3 bg-emerald-900 text-stone-100 font-bold border-2 border-emerald-950 hover:bg-emerald-800 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed uppercase"
+              >
+                ⚙ Đấu Caro với Máy
+              </button>
             </div>
 
             {/* Khối 2: Vào Phòng Đã Có */}

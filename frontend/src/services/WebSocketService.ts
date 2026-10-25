@@ -56,6 +56,28 @@ export class WebSocketService {
           }
         });
 
+        // 2b. Subscribe /user/queue/room/bot-created khi tạo phòng Đấu với Máy xong.
+        // Server trả về luôn GameStateResponse ban đầu (ván đã ONGOING) — không tự dựng state ở client.
+        this.client.subscribe('/user/queue/room/bot-created', (message) => {
+          try {
+            const state: GameStateResponse = JSON.parse(message.body);
+            if (!state || !state.roomId || !state.matchStatus) {
+              console.warn('Bỏ qua payload tạo phòng máy không hợp lệ:', state);
+              return;
+            }
+            this.subscribeToMatch(state.roomId);
+            const store = useGameStore.getState();
+            store.setMyPlayer('PLAYER_1');
+            store.setIsBotMatch(true);
+            store.setRoomGameType(state.gameType);
+            store.setGameState(state);
+            store.setRoomId(state.roomId);
+          } catch (err) {
+            console.error('Lỗi khi xử lý room/bot-created:', err);
+            useGameStore.getState().setErrorMessage('Không thể xử lý phản hồi tạo phòng đấu máy');
+          }
+        });
+
         // 3. Khôi phục Subscription bàn cờ khi Reconnect nếu đã có roomId
         const currentRoomId = useGameStore.getState().roomId;
         if (currentRoomId) {
@@ -190,6 +212,18 @@ export class WebSocketService {
     this.client.publish({
       destination: '/app/room/create',
       body: JSON.stringify({ gameType }),
+    });
+  }
+
+  public createBotRoom(): void {
+    if (!this.client.connected) {
+      useGameStore.getState().setErrorMessage('Chưa kết nối tới máy chủ WebSocket');
+      return;
+    }
+
+    this.client.publish({
+      destination: '/app/room/create-bot',
+      body: JSON.stringify({ gameType: 'CARO' }),
     });
   }
 

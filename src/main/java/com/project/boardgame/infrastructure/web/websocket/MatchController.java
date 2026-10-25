@@ -2,6 +2,7 @@ package com.project.boardgame.infrastructure.web.websocket;
 
 import com.project.boardgame.application.models.GameType;
 import com.project.boardgame.application.models.Room;
+import com.project.boardgame.application.services.AiMoveService;
 import com.project.boardgame.application.services.InvalidMoveException;
 import com.project.boardgame.application.services.MatchStatus;
 import com.project.boardgame.application.services.RoomJoinException;
@@ -17,6 +18,7 @@ import com.project.boardgame.infrastructure.web.websocket.dto.JoinRoomRequest;
 import com.project.boardgame.infrastructure.web.websocket.dto.MoveRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -35,10 +37,25 @@ public class MatchController {
 
     private final RoomManagerService roomManagerService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final AiMoveService aiMoveService;
 
+    /**
+     * Constructor cũ giữ lại cho các test hiện có (không dùng Bot). Không có AiMoveService thì
+     * phòng đấu máy sẽ không được lên lịch nước đi của Bot.
+     */
     public MatchController(RoomManagerService roomManagerService, SimpMessagingTemplate messagingTemplate) {
+        this(roomManagerService, messagingTemplate, null);
+    }
+
+    @Autowired
+    public MatchController(
+            RoomManagerService roomManagerService,
+            SimpMessagingTemplate messagingTemplate,
+            AiMoveService aiMoveService
+    ) {
         this.roomManagerService = roomManagerService;
         this.messagingTemplate = messagingTemplate;
+        this.aiMoveService = aiMoveService;
     }
 
     @MessageMapping("/room/create")
@@ -58,6 +75,31 @@ public class MatchController {
         String roomId = roomManagerService.createRoom(playerId, gameType);
         log.info("Player {} created room {} for game {}", playerId, roomId, gameType);
         return new CreateRoomResponse(roomId);
+    }
+
+    /**
+     * Tạo phòng đấu với máy. Trả trạng thái ban đầu trực tiếp về user (ván đã ONGOING ngay),
+     * vì client chỉ subscribe /topic/match/{roomId} sau khi biết roomId.
+     */
+    @MessageMapping("/room/create-bot")
+    @SendToUser("/queue/room/bot-created")
+    public GameStateResponse createBotRoom(
+            @Payload(required = false) CreateRoomRequest request,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        if (headerAccessor.getUser() == null) {
+            throw new IllegalStateException("Phiên kết nối người dùng không hợp lệ");
+        }
+        String playerId = headerAccessor.getUser().getName();
+        GameType gameType = (request != null && request.gameType() != null)
+                ? request.gameType()
+                : GameType.CARO;
+
+        Room room = roomManagerService.createBotRoom(playerId, gameType);
+        log.info("Player {} created BOT room {} for game {}", playerId, room.getRoomId(), gameType);
+        synchronized (room) {
+            return GameStateResponse.from(room.getRoomId(), room);
+        }
     }
 
     @MessageMapping("/room/join")
@@ -122,6 +164,12 @@ public class MatchController {
             roomManagerService.removePlayerMappings(room.getHostId(), room.getGuestId());
             roomManagerService.removeRoom(roomId);
             log.info("Match in room {} finished with status {}. Cleaned up player mappings and removed zombie room.", roomId, response.matchStatus());
+            return;
+        }
+
+        // Đấu với máy: sau khi đã broadcast nước của người chơi (ngoài khối synchronized), lên lịch lượt Bot
+        if (room.isBotMatch() && response.currentPlayer() == Player.PLAYER_2 && aiMoveService != null) {
+            aiMoveService.scheduleBotMove(roomId);
         }
     }
 
