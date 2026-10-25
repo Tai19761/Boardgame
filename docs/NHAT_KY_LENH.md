@@ -292,3 +292,11 @@ Khắc phục xung đột kiểu dữ liệu trên WebSocket bằng cách tách 
 - **Backend:** 
   - Mở rộng DTO `MoveRequest` thêm tham số `direction` (tùy chọn) để tương thích ngược. 
   - Tự động dịch hướng di chuyển (LEFT/RIGHT) sang tọa độ `to` (ô liền kề) trước khi đưa vào `OAnQuanRuleEngine`.
+
+---
+
+### Lệnh 16: Triển khai chế độ Đấu với Máy (Caro Minimax + Alpha-Beta) (Commit: c5a8ae7)
+- **Thuật toán (Domain):** Xây dựng `CaroMinimax` (depth 3) và `CaroHeuristicEvaluator` thuần Java. Áp dụng cắt tỉa Alpha-Beta và tối ưu không gian duyệt bằng cách giới hạn tìm kiếm trong bán kính 2 ô quanh các quân cờ hiện có.
+- **Đa luồng (Infrastructure & Application):** Khởi tạo `AiWorkerConfig` cấp phát luồng động (`Math.max(2, CPU_CORES - 1)`). Tách `AiMoveService` để xử lý AI bất đồng bộ. Giải quyết triệt để race-condition thông qua cơ chế snapshot lịch sử và đẩy lệnh I/O mạng (STOMP broadcast) ra khỏi monitor lock.
+- **Frontend & UX:** Bổ sung luồng tạo phòng Đấu Máy (vào ván ngay không cần chờ). Khóa tương tác bàn cờ (`pointer-events-none`), hiển thị trạng thái "Máy đang suy nghĩ" và chặn hoàn toàn Optimistic Update để đảm bảo tính nhất quán với Server Authoritative.
+
