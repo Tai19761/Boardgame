@@ -267,4 +267,65 @@ class RoomManagerServiceTest {
                 "Phải chặn người chơi join vào phòng thứ 2 khi đang ở phòng 1"
         );
     }
+
+    @Test
+    @DisplayName("Tạo phòng CARO: boardSize null thì fallback về 15")
+    void testCreateRoom_CaroNullBoardSize_DefaultsTo15() {
+        String roomId = roomManager.createRoom("host-caro-default", GameType.CARO, null);
+        Room room = roomManager.getRoom(roomId).orElseThrow();
+        assertEquals(15, room.getBoardSize());
+    }
+
+    @Test
+    @DisplayName("Tạo phòng CARO: boardSize hợp lệ (15, 20, 25) được lưu đúng")
+    void testCreateRoom_CaroValidBoardSizes_Success() {
+        String r15 = roomManager.createRoom("host-15", GameType.CARO, 15);
+        assertEquals(15, roomManager.getRoom(r15).orElseThrow().getBoardSize());
+
+        String r20 = roomManager.createRoom("host-20", GameType.CARO, 20);
+        assertEquals(20, roomManager.getRoom(r20).orElseThrow().getBoardSize());
+
+        String r25 = roomManager.createRoom("host-25", GameType.CARO, 25);
+        assertEquals(25, roomManager.getRoom(r25).orElseThrow().getBoardSize());
+    }
+
+    @Test
+    @DisplayName("Tạo phòng CARO: ném IllegalArgumentException khi gửi kích thước ngoài whitelist (10 hoặc 30) và giải phóng pending mapping")
+    void testCreateRoom_CaroInvalidBoardSize_ThrowsAndReleasesPending() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            roomManager.createRoom("host-bad-10", GameType.CARO, 10);
+        });
+        assertThrows(IllegalArgumentException.class, () -> {
+            roomManager.createRoom("host-bad-30", GameType.CARO, 30);
+        });
+
+        // Người chơi sau khi bị từ chối vẫn có thể tạo lại phòng hợp lệ (không bị kẹt PENDING)
+        assertDoesNotThrow(() -> {
+            roomManager.createRoom("host-bad-10", GameType.CARO, 15);
+        });
+    }
+
+    @Test
+    @DisplayName("Tạo phòng GANH hoặc Ô ĂN QUAN: bỏ qua boardSize do client gửi lên (ép thành null)")
+    void testCreateRoom_NonCaro_BoardSizeForcedToNull() {
+        String roomIdGanh = roomManager.createRoom("host-ganh-size", GameType.GANH, 20);
+        Room roomGanh = roomManager.getRoom(roomIdGanh).orElseThrow();
+        assertNull(roomGanh.getBoardSize(), "Cờ Gánh không có boardSize");
+
+        String roomIdOAnQuan = roomManager.createRoom("host-oanquan-size", GameType.O_AN_QUAN, 25);
+        Room roomOAnQuan = roomManager.getRoom(roomIdOAnQuan).orElseThrow();
+        assertNull(roomOAnQuan.getBoardSize(), "Ô Ăn Quan không có boardSize");
+    }
+
+    @Test
+    @DisplayName("Tạo phòng Bot CARO: hỗ trợ boardSize động và validate whitelist")
+    void testCreateBotRoom_CaroDynamicBoardSize() {
+        Room botRoom20 = roomManager.createBotRoom("host-bot-20", GameType.CARO, 20);
+        assertEquals(20, botRoom20.getBoardSize());
+        assertTrue(botRoom20.isBotMatch());
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            roomManager.createBotRoom("host-bot-bad", GameType.CARO, 99);
+        });
+    }
 }

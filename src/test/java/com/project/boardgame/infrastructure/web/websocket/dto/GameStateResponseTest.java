@@ -38,7 +38,8 @@ class GameStateResponseTest {
                 1,
                 0,
                 null,
-                GameType.GANH
+                GameType.GANH,
+                null
         );
 
         assertEquals("room-123", response.roomId());
@@ -49,6 +50,7 @@ class GameStateResponseTest {
         assertEquals(0, response.player2Score());
         assertNull(response.winner());
         assertNotNull(response.pieces());
+        assertNull(response.boardSize());
     }
 
     @Test
@@ -65,6 +67,18 @@ class GameStateResponseTest {
         assertEquals(GameType.CARO, response.gameType());
         assertEquals(MatchStatus.ONGOING, response.matchStatus());
         assertEquals(Player.PLAYER_1, response.currentPlayer());
+        assertEquals(15, response.boardSize(), "CARO không chỉ định kích thước thì mặc định 15");
+    }
+
+    @Test
+    @DisplayName("from(roomId, room) phòng CARO 25x25: response mang đúng boardSize = 25")
+    void testFrom_WithCaroRoom25_ReturnsBoardSize25() {
+        String roomId = roomManager.createRoom("host-caro-25", GameType.CARO, 25);
+        Room room = roomManager.getRoom(roomId).orElseThrow();
+
+        GameStateResponse response = GameStateResponse.from(roomId, room);
+
+        assertEquals(25, response.boardSize());
     }
 
     @Test
@@ -81,6 +95,7 @@ class GameStateResponseTest {
         assertEquals(GameType.GANH, response.gameType());
         assertEquals(MatchStatus.ONGOING, response.matchStatus());
         assertEquals(16, response.pieces().size(), "Cờ Gánh khởi tạo có 16 quân cờ");
+        assertNull(response.boardSize(), "Game khác Caro không có boardSize");
     }
 
     @Test

@@ -12,7 +12,26 @@ import java.util.Optional;
 
 public class CaroRuleEngine implements GameRuleEngine {
 
-    public static final int BOARD_SIZE = 15;
+    public static final int DEFAULT_BOARD_SIZE = 15;
+    /** Kích thước tối thiểu để có thể xếp đủ 5 quân liên tiếp. */
+    public static final int MIN_BOARD_SIZE = 5;
+
+    private final int boardSize;
+
+    public CaroRuleEngine() {
+        this(DEFAULT_BOARD_SIZE);
+    }
+
+    public CaroRuleEngine(int boardSize) {
+        if (boardSize < MIN_BOARD_SIZE) {
+            throw new IllegalArgumentException("boardSize phải >= " + MIN_BOARD_SIZE);
+        }
+        this.boardSize = boardSize;
+    }
+
+    public int getBoardSize() {
+        return boardSize;
+    }
 
     @Override
     public BoardState initializeBoard() {
@@ -39,7 +58,7 @@ public class CaroRuleEngine implements GameRuleEngine {
     }
 
     private boolean isWithinBounds(Position p) {
-        return p.x() >= 0 && p.x() < BOARD_SIZE && p.y() >= 0 && p.y() < BOARD_SIZE;
+        return p.x() >= 0 && p.x() < boardSize && p.y() >= 0 && p.y() < boardSize;
     }
 
     @Override
@@ -55,7 +74,7 @@ public class CaroRuleEngine implements GameRuleEngine {
 
     @Override
     public boolean isGameOver(BoardState board) {
-        if (board.pieces().size() >= BOARD_SIZE * BOARD_SIZE) {
+        if (board.pieces().size() >= boardSize * boardSize) {
             return true; // Bàn cờ đầy (Hòa nếu không ai thắng)
         }
         for (Position pos : board.pieces().keySet()) {

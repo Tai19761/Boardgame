@@ -198,4 +198,16 @@ class CaroMinimaxTest {
 
         assertTrue(executeCalls.get() > 0, "CaroMinimax phải sinh trạng thái con qua GameRuleEngine được inject");
     }
+
+    @Test
+    @DisplayName("CaroMinimax với constructor nhận boardSize 20: bàn trống đánh vào tâm (10, 10)")
+    void dynamicBoardSize_PlaysCorrectCenter() {
+        CaroRuleEngine engine20 = new CaroRuleEngine(20);
+        CaroMinimax minimax20 = new CaroMinimax(engine20, 20);
+
+        BoardState empty = new BoardState(Map.of(), Player.PLAYER_2);
+        Position move = minimax20.findBestMove(empty, Player.PLAYER_2);
+
+        assertEquals(p(10, 10), move, "Bàn 20x20 tâm là (10, 10)");
+    }
 }

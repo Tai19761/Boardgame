@@ -20,7 +20,8 @@ public record GameStateResponse(
         int player1Score,
         int player2Score,
         Player winner,
-        GameType gameType
+        GameType gameType,
+        Integer boardSize
 ) {
 
     public static GameStateResponse from(String roomId, Room room) {
@@ -28,6 +29,7 @@ public record GameStateResponse(
         BoardState board = engine.getCurrentBoard();
         MatchStatus status = engine.getMatchStatus();
         GameType gameType = room.getGameType();
+        Integer boardSize = room.getBoardSize();
 
         Player winner = null;
         if (status == MatchStatus.WIN_PLAYER_1) {
@@ -46,7 +48,8 @@ public record GameStateResponse(
                     0,
                     0,
                     null,
-                    gameType
+                    gameType,
+                    boardSize
             );
         }
 
@@ -59,7 +62,8 @@ public record GameStateResponse(
                 board.player1Score(),
                 board.player2Score(),
                 winner,
-                gameType
+                gameType,
+                boardSize
         );
     }
 }

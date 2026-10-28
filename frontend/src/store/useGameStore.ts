@@ -28,6 +28,7 @@ export interface GameStateResponse {
   player2Score: number;
   winner: Player | null;
   gameType: string;
+  boardSize?: number | null;
   [key: string]: unknown;
 }
 

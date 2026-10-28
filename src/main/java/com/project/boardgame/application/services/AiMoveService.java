@@ -9,6 +9,7 @@ import com.project.boardgame.domain.models.BoardState;
 import com.project.boardgame.domain.models.MoveStep;
 import com.project.boardgame.domain.models.Player;
 import com.project.boardgame.domain.models.Position;
+import com.project.boardgame.domain.rules.CaroRuleEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -76,8 +77,10 @@ public class AiMoveService {
                 historySizeAtSnapshot = room.getMatchEngine().getMoveHistory().size();
             }
 
-            // 2) Tính toán NGOÀI khóa (CPU nặng) trên snapshot bất biến; rule engine lấy từ phòng (do factory tạo)
-            Position bestMove = new CaroMinimax(room.getRuleEngine()).findBestMove(snapshot, BOT_PLAYER);
+            // 2) Tính toán NGOÀI khóa (CPU nặng) trên snapshot bất biến; rule engine lấy từ phòng (do factory tạo),
+            //    kích thước bàn lấy từ phòng để evaluator/Minimax không bị kẹt ở 15x15
+            int boardSize = room.getBoardSize() != null ? room.getBoardSize() : CaroRuleEngine.DEFAULT_BOARD_SIZE;
+            Position bestMove = new CaroMinimax(room.getRuleEngine(), boardSize).findBestMove(snapshot, BOT_PLAYER);
 
             // 3) Có kết quả: lấy lại phòng theo roomId, bỏ qua nếu phòng đã bị xóa/thay thế hoặc đã kết thúc
             Optional<Room> latestOpt = roomManagerService.getRoom(roomId);

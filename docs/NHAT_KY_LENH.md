@@ -300,3 +300,27 @@ Khắc phục xung đột kiểu dữ liệu trên WebSocket bằng cách tách 
 - **Đa luồng (Infrastructure & Application):** Khởi tạo `AiWorkerConfig` cấp phát luồng động (`Math.max(2, CPU_CORES - 1)`). Tách `AiMoveService` để xử lý AI bất đồng bộ. Giải quyết triệt để race-condition thông qua cơ chế snapshot lịch sử và đẩy lệnh I/O mạng (STOMP broadcast) ra khỏi monitor lock.
 - **Frontend & UX:** Bổ sung luồng tạo phòng Đấu Máy (vào ván ngay không cần chờ). Khóa tương tác bàn cờ (`pointer-events-none`), hiển thị trạng thái "Máy đang suy nghĩ" và chặn hoàn toàn Optimistic Update để đảm bảo tính nhất quán với Server Authoritative.
 
+---
+
+### Lệnh 17: Cấu hình kích thước bàn cờ Caro động (15x15, 20x20, 25x25) an toàn và toàn diện
+- **Mục tiêu:** Loại bỏ hoàn toàn kích thước bàn cờ cố định 15x15 trong Cờ Caro, cho phép người dùng tùy chọn 15x15, 20x20, 25x25 cho cả chế độ Đấu Người và Đấu Máy qua WebSocket. Đảm bảo phòng thủ bộ nhớ/CPU (chống DoS / Memory Exhaustion) bằng whitelist tại server, giữ nguyên backward compatibility cho toàn bộ Unit Test và xử lý responsive layout chống vỡ giao diện trên thiết bị di động.
+- **Backend (Domain, Application & Infrastructure):**
+  - `CaroRuleEngine.java`: Đổi `BOARD_SIZE` thành `DEFAULT_BOARD_SIZE = 15;`, thêm `MIN_BOARD_SIZE = 5;`. Bổ sung constructor nhận `int boardSize` kèm guard clause (`boardSize < MIN_BOARD_SIZE` ném `IllegalArgumentException`). Tính toán điều kiện bàn đầy (`isGameOver`) động theo `boardSize * boardSize`.
+  - `CaroMinimax.java`: Bổ sung constructor `CaroMinimax(GameRuleEngine, int boardSize)` để khởi tạo `CaroHeuristicEvaluator` đúng kích thước bàn, tránh kẹt cố định ở kích thước 15.
+  - `AiMoveService.java`: Cập nhật `runBotTurn` truyền `room.getBoardSize()` vào `CaroMinimax(room.getRuleEngine(), boardSize)`.
+  - `GameRuleEngineFactory` & `DefaultGameRuleEngineFactory`: Phương thức `create` nhận `(GameType, Integer boardSize)`. Giữ default method `create(GameType)` để tương thích ngược.
+  - `Room.java`: Bổ sung trường `Integer boardSize` và getter `getBoardSize()`. Constructor overload tự động gán mặc định (15 với CARO, null với game khác). Cập nhật `createBotMatch` nhận `boardSize`.
+  - `RoomManagerService.java`: Nguồn sự thật duy nhất để validate. Áp dụng whitelist `Set.of(15, 20, 25)` qua hàm `resolveBoardSize`. Với CARO: null thành 15, ngoài whitelist ném `IllegalArgumentException` và không làm rò rỉ pending player mapping; với các game khác (GANH, O_AN_QUAN) tự động ép `boardSize = null`.
+  - `MatchController.java`: Thêm `@MessageExceptionHandler(IllegalArgumentException.class)` trả về `ErrorResponse` mã lỗi `INVALID_ARGUMENT`. Chuyển `boardSize` từ `CreateRoomRequest` xuống service xử lý.
+  - DTO Records (`CreateRoomRequest`, `GameStateResponse`): Bổ sung `Integer boardSize`. `CreateRoomRequest` có constructor phụ 1 tham số giữ tương thích ngược. `GameStateResponse.from()` map trực tiếp `room.getBoardSize()`.
+- **Frontend (React / Tailwind):**
+  - `WebSocketService.ts`: Bổ sung tham số tùy chọn `boardSize?: number` cho `createRoom` và `createBotRoom`.
+  - `App.tsx`: Thêm dropdown `<select>` chọn cỡ bàn cờ (15x15 Tiêu chuẩn, 20x20 Mở rộng, 25x25 Đại chiến). Giá trị này được liên kết với cả 2 luồng Tạo phòng Đấu Người và Đấu với Máy.
+  - `useGameStore.ts`: Bổ sung trường `boardSize?: number | null` vào type `GameStateResponse`. Không tạo state riêng để đảm bảo tính nhất quán (Single Source of Truth từ server).
+  - `CaroBoard.tsx`: Đọc kích thước từ `gameState?.boardSize ?? 15` (có whitelist client dự phòng ép về 15 nếu server trả dữ liệu dị thường). Render động `boardSize * boardSize` ô cờ với CSS inline `gridTemplateColumns: repeat(${boardSize}, minmax(0, 1fr))`. Sử dụng map đối tượng cho cỡ chữ (tránh purge class Tailwind) và container `overflow-x-auto` kèm `min-w` chống co cụm ô cờ trên màn hình mobile.
+- **Kiểm thử tự động:**
+  - Viết mới các bài test trong `CaroRuleEngineTest` (guard clause < 5, biên kích thước 20x20, kiểm tra hòa đầy bàn theo `size^2`).
+  - Viết mới các bài test trong `RoomManagerServiceTest` (fallback null -> 15, validate 15/20/25, ném lỗi với 10/30, ép null với GANH/Ô Ăn Quan, tạo phòng bot động).
+  - Cập nhật và bổ sung test trong `MatchControllerTest`, `GameStateResponseTest`, `CaroMinimaxTest`.
+  - Kết quả: 134/134 bài test Backend PASS 100%, frontend TypeScript & Vite build hoàn tất không lỗi.
+

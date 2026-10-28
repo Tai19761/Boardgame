@@ -13,9 +13,9 @@ import org.springframework.stereotype.Component;
 public class DefaultGameRuleEngineFactory implements GameRuleEngineFactory {
 
     @Override
-    public GameRuleEngine create(GameType gameType) {
+    public GameRuleEngine create(GameType gameType, Integer boardSize) {
         return switch (gameType) {
-            case CARO -> new CaroRuleEngine();
+            case CARO -> boardSize == null ? new CaroRuleEngine() : new CaroRuleEngine(boardSize);
             case GANH -> new GanhRuleEngine();
             case O_AN_QUAN -> new OAnQuanRuleEngine();
         };

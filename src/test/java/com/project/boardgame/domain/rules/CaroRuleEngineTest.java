@@ -178,4 +178,64 @@ class CaroRuleEngineTest {
         assertTrue(initialBoard.pieces().isEmpty(), "Initial Caro board should be empty");
         assertEquals(Player.PLAYER_1, initialBoard.currentPlayer(), "Player 1 starts first");
     }
+
+    @Test
+    void testConstructor_GuardClause_ThrowsWhenSizeLessThan5() {
+        assertThrows(IllegalArgumentException.class, () -> new CaroRuleEngine(4));
+        assertThrows(IllegalArgumentException.class, () -> new CaroRuleEngine(0));
+        assertThrows(IllegalArgumentException.class, () -> new CaroRuleEngine(-1));
+        assertDoesNotThrow(() -> new CaroRuleEngine(5));
+    }
+
+    @Test
+    void testDynamicBoardSize_Size20_BoundaryChecks() {
+        CaroRuleEngine engine20 = new CaroRuleEngine(20);
+        assertEquals(20, engine20.getBoardSize());
+
+        BoardState emptyBoard = engine20.initializeBoard();
+
+        // Ô (19, 19) hợp lệ
+        MoveStep validMove = new MoveStep(null, new Position(19, 19));
+        assertTrue(engine20.isValidMove(emptyBoard, validMove, Player.PLAYER_1));
+
+        // Ô (20, 19) và (19, 20) vượt biên
+        MoveStep outOfBounds1 = new MoveStep(null, new Position(20, 19));
+        MoveStep outOfBounds2 = new MoveStep(null, new Position(19, 20));
+        assertFalse(engine20.isValidMove(emptyBoard, outOfBounds1, Player.PLAYER_1));
+        assertFalse(engine20.isValidMove(emptyBoard, outOfBounds2, Player.PLAYER_1));
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            engine20.executeMove(emptyBoard, outOfBounds1, Player.PLAYER_1);
+        });
+    }
+
+    @Test
+    void testIsGameOver_BoardFull_CalculatedBasedOnSizeSquared() {
+        // Sử dụng bàn cờ nhỏ 5x5 để kiểm tra tính đầy bàn = 25 ô
+        CaroRuleEngine engine5 = new CaroRuleEngine(5);
+        Map<Position, Piece> pieces = new HashMap<>();
+
+        // Ma trận 5x5 không có bất kỳ hàng, cột hay đường chéo nào có 5 quân liên tiếp
+        Player[][] grid = {
+            {Player.PLAYER_1, Player.PLAYER_1, Player.PLAYER_2, Player.PLAYER_2, Player.PLAYER_1},
+            {Player.PLAYER_2, Player.PLAYER_2, Player.PLAYER_1, Player.PLAYER_1, Player.PLAYER_2},
+            {Player.PLAYER_1, Player.PLAYER_1, Player.PLAYER_2, Player.PLAYER_2, Player.PLAYER_1},
+            {Player.PLAYER_2, Player.PLAYER_2, Player.PLAYER_1, Player.PLAYER_1, Player.PLAYER_2},
+            {Player.PLAYER_1, Player.PLAYER_1, Player.PLAYER_2, Player.PLAYER_2, Player.PLAYER_1}
+        };
+        for (int y = 0; y < 5; y++) {
+            for (int x = 0; x < 5; x++) {
+                pieces.put(new Position(x, y), new Piece(grid[y][x]));
+            }
+        }
+        assertEquals(25, pieces.size());
+
+        BoardState fullBoard = new BoardState(pieces, Player.PLAYER_1);
+        assertTrue(engine5.isGameOver(fullBoard), "Bàn 5x5 có 25 quân cờ phải được xác định là kết thúc ván (hòa)");
+
+        // Nếu chỉ có 24 ô thì chưa đầy bàn
+        pieces.remove(new Position(4, 4));
+        BoardState notFullBoard = new BoardState(pieces, Player.PLAYER_1);
+        assertFalse(engine5.isGameOver(notFullBoard), "Bàn 5x5 mới có 24 quân và chưa có ai thắng thì chưa kết thúc");
+    }
 }

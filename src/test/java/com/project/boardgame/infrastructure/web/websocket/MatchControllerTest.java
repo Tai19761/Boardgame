@@ -252,6 +252,20 @@ class MatchControllerTest {
         ErrorResponse r5 = controller.handleGenericException(new RuntimeException("Lỗi hệ thống"));
         assertEquals("Lỗi hệ thống", r5.message());
         assertEquals("SYSTEM_ERROR", r5.errorType());
+
+        ErrorResponse r6 = controller.handleIllegalArgumentException(new IllegalArgumentException("Tham số không hợp lệ"));
+        assertEquals("Tham số không hợp lệ", r6.message());
+        assertEquals("INVALID_ARGUMENT", r6.errorType());
+    }
+
+    @Test
+    @DisplayName("Tạo phòng CARO qua Controller với boardSize hợp lệ (20) được truyền đúng xuống RoomManager")
+    void testCreateRoom_WithValidBoardSize() {
+        SimpMessageHeaderAccessor hostHeader = createHeaderAccessor("host-caro-20");
+        CreateRoomResponse response = controller.createRoom(new CreateRoomRequest(GameType.CARO, 20), hostHeader);
+
+        Room room = roomManager.getRoom(response.roomId()).orElseThrow();
+        assertEquals(20, room.getBoardSize());
     }
 
     @Test

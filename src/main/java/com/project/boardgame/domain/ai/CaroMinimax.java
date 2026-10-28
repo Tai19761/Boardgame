@@ -41,7 +41,12 @@ public class CaroMinimax {
 
     /** Cấu hình mặc định: bàn 15x15, độ sâu {@value #DEFAULT_DEPTH}. */
     public CaroMinimax(GameRuleEngine ruleEngine) {
-        this(ruleEngine, new CaroHeuristicEvaluator(CaroRuleEngine.BOARD_SIZE), CaroRuleEngine.BOARD_SIZE, DEFAULT_DEPTH);
+        this(ruleEngine, CaroRuleEngine.DEFAULT_BOARD_SIZE);
+    }
+
+    /** Bàn {@code boardSize}x{@code boardSize}, độ sâu {@value #DEFAULT_DEPTH}; evaluator khởi tạo đúng kích thước. */
+    public CaroMinimax(GameRuleEngine ruleEngine, int boardSize) {
+        this(ruleEngine, new CaroHeuristicEvaluator(boardSize), boardSize, DEFAULT_DEPTH);
     }
 
     public CaroMinimax(GameRuleEngine ruleEngine, CaroHeuristicEvaluator evaluator, int boardSize, int depth) {

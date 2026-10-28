@@ -1,6 +1,7 @@
 package com.project.boardgame.application.models;
 
 import com.project.boardgame.application.services.MatchEngineService;
+import com.project.boardgame.domain.rules.CaroRuleEngine;
 import com.project.boardgame.domain.rules.GameRuleEngine;
 
 import java.util.UUID;
@@ -18,12 +19,18 @@ public class Room {
     private final GameType gameType;
     private final GameRuleEngine ruleEngine;
     private final boolean botMatch;
+    /** Kích thước bàn (chỉ CARO); null với các game khác. Giá trị đã được RoomManagerService chuẩn hóa. */
+    private final Integer boardSize;
 
     public Room(String hostId, GameType gameType, GameRuleEngine ruleEngine, MatchEngineService matchEngine) {
-        this(hostId, gameType, ruleEngine, matchEngine, false);
+        this(hostId, gameType, ruleEngine, matchEngine, defaultBoardSize(gameType));
     }
 
-    private Room(String hostId, GameType gameType, GameRuleEngine ruleEngine, MatchEngineService matchEngine, boolean botMatch) {
+    public Room(String hostId, GameType gameType, GameRuleEngine ruleEngine, MatchEngineService matchEngine, Integer boardSize) {
+        this(hostId, gameType, ruleEngine, matchEngine, false, boardSize);
+    }
+
+    private Room(String hostId, GameType gameType, GameRuleEngine ruleEngine, MatchEngineService matchEngine, boolean botMatch, Integer boardSize) {
         this.roomId = UUID.randomUUID().toString();
         this.hostId = hostId;
         this.guestId = null;
@@ -32,6 +39,11 @@ public class Room {
         this.matchEngine = matchEngine;
         this.roomStatus = RoomStatus.WAITING;
         this.botMatch = botMatch;
+        this.boardSize = boardSize;
+    }
+
+    private static Integer defaultBoardSize(GameType gameType) {
+        return gameType == GameType.CARO ? CaroRuleEngine.DEFAULT_BOARD_SIZE : null;
     }
 
     /**
@@ -39,7 +51,11 @@ public class Room {
      * người chơi luôn cầm PLAYER_1 và đi trước.
      */
     public static Room createBotMatch(String hostId, GameType gameType, GameRuleEngine ruleEngine, MatchEngineService matchEngine) {
-        Room room = new Room(hostId, gameType, ruleEngine, matchEngine, true);
+        return createBotMatch(hostId, gameType, ruleEngine, matchEngine, defaultBoardSize(gameType));
+    }
+
+    public static Room createBotMatch(String hostId, GameType gameType, GameRuleEngine ruleEngine, MatchEngineService matchEngine, Integer boardSize) {
+        Room room = new Room(hostId, gameType, ruleEngine, matchEngine, true, boardSize);
         room.joinGuest(BOT_ID);
         return room;
     }
@@ -84,5 +100,9 @@ public class Room {
 
     public boolean isBotMatch() {
         return botMatch;
+    }
+
+    public Integer getBoardSize() {
+        return boardSize;
     }
 }

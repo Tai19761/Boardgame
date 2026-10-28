@@ -201,7 +201,7 @@ export class WebSocketService {
     }
   }
 
-  public createRoom(gameType: string = 'CARO'): void {
+  public createRoom(gameType: string = 'CARO', boardSize?: number): void {
     if (!this.client.connected) {
       useGameStore.getState().setErrorMessage('Chưa kết nối tới máy chủ WebSocket');
       return;
@@ -209,21 +209,31 @@ export class WebSocketService {
 
     useGameStore.getState().setRoomGameType(gameType);
 
+    const payload: { gameType: string; boardSize?: number } = { gameType };
+    if (boardSize !== undefined) {
+      payload.boardSize = boardSize;
+    }
+
     this.client.publish({
       destination: '/app/room/create',
-      body: JSON.stringify({ gameType }),
+      body: JSON.stringify(payload),
     });
   }
 
-  public createBotRoom(): void {
+  public createBotRoom(boardSize?: number): void {
     if (!this.client.connected) {
       useGameStore.getState().setErrorMessage('Chưa kết nối tới máy chủ WebSocket');
       return;
     }
 
+    const payload: { gameType: string; boardSize?: number } = { gameType: 'CARO' };
+    if (boardSize !== undefined) {
+      payload.boardSize = boardSize;
+    }
+
     this.client.publish({
       destination: '/app/room/create-bot',
-      body: JSON.stringify({ gameType: 'CARO' }),
+      body: JSON.stringify(payload),
     });
   }
 

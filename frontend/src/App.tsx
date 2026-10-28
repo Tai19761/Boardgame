@@ -10,6 +10,7 @@ export default function App() {
   const clearError = useGameStore((state) => state.clearError);
 
   const [inputRoomId, setInputRoomId] = useState('');
+  const [caroBoardSize, setCaroBoardSize] = useState<number>(15);
 
   useEffect(() => {
     webSocketService.connect();
@@ -19,11 +20,11 @@ export default function App() {
   }, []);
 
   const handleCreateRoom = (gameType: 'CARO' | 'GANH' | 'O_AN_QUAN' = 'CARO') => {
-    webSocketService.createRoom(gameType);
+    webSocketService.createRoom(gameType, gameType === 'CARO' ? caroBoardSize : undefined);
   };
 
   const handleCreateBotRoom = () => {
-    webSocketService.createBotRoom();
+    webSocketService.createBotRoom(caroBoardSize);
   };
 
   const handleJoinRoom = () => {
@@ -78,9 +79,30 @@ export default function App() {
               <h3 className="font-extrabold text-stone-900 text-base uppercase mb-1">
                 Tạo Phòng Mới
               </h3>
-              <p className="text-sm text-stone-700 mb-4">
+              <p className="text-sm text-stone-700 mb-3">
                 Chọn loại cờ và khởi tạo phòng đấu mới, hệ thống sẽ cấp mã phòng để chia sẻ cho đối thủ.
               </p>
+
+              {/* Tùy chọn kích thước bàn Caro */}
+              <div className="mb-4 p-3 bg-stone-100 border border-stone-400 flex flex-col sm:flex-row sm:items-center gap-2">
+                <label htmlFor="caro-size-select" className="text-xs sm:text-sm font-bold text-stone-800 uppercase">
+                  Kích thước bàn Caro:
+                </label>
+                <select
+                  id="caro-size-select"
+                  value={caroBoardSize}
+                  onChange={(e) => setCaroBoardSize(Number(e.target.value))}
+                  className="px-2 py-1.5 border-2 border-stone-800 bg-white text-stone-900 font-bold text-sm focus:outline-none focus:border-stone-950 cursor-pointer"
+                >
+                  <option value={15}>15x15 (Tiêu chuẩn)</option>
+                  <option value={20}>20x20 (Mở rộng)</option>
+                  <option value={25}>25x25 (Đại chiến)</option>
+                </select>
+                <span className="text-xs text-stone-600 sm:ml-auto">
+                  Áp dụng cho cả Đấu Người và Đấu Máy
+                </span>
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   type="button"
@@ -88,7 +110,7 @@ export default function App() {
                   disabled={!isConnected}
                   className="w-full sm:w-auto px-6 py-3 bg-stone-800 text-stone-100 font-bold border-2 border-stone-950 hover:bg-stone-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed uppercase"
                 >
-                  + Tạo phòng Caro (15x15)
+                  + Tạo phòng Caro ({caroBoardSize}x{caroBoardSize})
                 </button>
                 <button
                   type="button"
@@ -115,7 +137,7 @@ export default function App() {
                 Đấu với Máy
               </h3>
               <p className="text-sm text-stone-700 mb-4">
-                Luyện tập Caro 15x15 với máy (Minimax + Alpha-Beta). Bạn cầm quân X và đi trước, ván bắt đầu ngay lập tức.
+                Luyện tập Caro {caroBoardSize}x{caroBoardSize} với máy (Minimax + Alpha-Beta). Bạn cầm quân X và đi trước, ván bắt đầu ngay lập tức.
               </p>
               <button
                 id="create-bot-room-button"
@@ -124,7 +146,7 @@ export default function App() {
                 disabled={!isConnected}
                 className="w-full sm:w-auto px-6 py-3 bg-emerald-900 text-stone-100 font-bold border-2 border-emerald-950 hover:bg-emerald-800 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed uppercase"
               >
-                ⚙ Đấu Caro với Máy
+                ⚙ Đấu Caro với Máy ({caroBoardSize}x{caroBoardSize})
               </button>
             </div>
 

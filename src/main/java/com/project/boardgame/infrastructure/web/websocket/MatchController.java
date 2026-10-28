@@ -71,9 +71,11 @@ public class MatchController {
         GameType gameType = (request != null && request.gameType() != null)
                 ? request.gameType()
                 : GameType.CARO;
+        // Không tự validate: RoomManagerService là nguồn sự thật duy nhất cho whitelist boardSize
+        Integer boardSize = request != null ? request.boardSize() : null;
 
-        String roomId = roomManagerService.createRoom(playerId, gameType);
-        log.info("Player {} created room {} for game {}", playerId, roomId, gameType);
+        String roomId = roomManagerService.createRoom(playerId, gameType, boardSize);
+        log.info("Player {} created room {} for game {} (boardSize={})", playerId, roomId, gameType, boardSize);
         return new CreateRoomResponse(roomId);
     }
 
@@ -94,9 +96,10 @@ public class MatchController {
         GameType gameType = (request != null && request.gameType() != null)
                 ? request.gameType()
                 : GameType.CARO;
+        Integer boardSize = request != null ? request.boardSize() : null;
 
-        Room room = roomManagerService.createBotRoom(playerId, gameType);
-        log.info("Player {} created BOT room {} for game {}", playerId, room.getRoomId(), gameType);
+        Room room = roomManagerService.createBotRoom(playerId, gameType, boardSize);
+        log.info("Player {} created BOT room {} for game {} (boardSize={})", playerId, room.getRoomId(), gameType, room.getBoardSize());
         synchronized (room) {
             return GameStateResponse.from(room.getRoomId(), room);
         }
@@ -178,6 +181,13 @@ public class MatchController {
     public ErrorResponse handleIllegalStateException(IllegalStateException ex) {
         log.warn("Illegal state exception: {}", ex.getMessage());
         return new ErrorResponse(ex.getMessage(), "ILLEGAL_STATE");
+    }
+
+    @MessageExceptionHandler(IllegalArgumentException.class)
+    @SendToUser("/queue/errors")
+    public ErrorResponse handleIllegalArgumentException(IllegalArgumentException ex) {
+        log.warn("Invalid argument: {}", ex.getMessage());
+        return new ErrorResponse(ex.getMessage(), "INVALID_ARGUMENT");
     }
 
     @MessageExceptionHandler(InvalidMoveException.class)

@@ -2,12 +2,34 @@ import React from 'react';
 import { useGameStore, type Piece } from '../store/useGameStore';
 import { webSocketService } from '../services/WebSocketService';
 
-const BOARD_SIZE = 15;
+const ALLOWED_SIZES = [15, 20, 25] as const;
+
+// Object map chứa chuỗi class Tailwind đầy đủ (CẤM ghép chuỗi động để không bị loại bỏ khi build)
+const FONT_SIZE_MAP: Record<number, string> = {
+  15: 'text-base sm:text-xl md:text-2xl',
+  20: 'text-xs sm:text-sm md:text-base',
+  25: 'text-[10px] sm:text-xs md:text-sm',
+};
+
+const MIN_WIDTH_MAP: Record<number, string> = {
+  15: 'min-w-[320px]',
+  20: 'min-w-[460px]',
+  25: 'min-w-[560px]',
+};
 
 export const CaroBoard: React.FC = () => {
   const gameState = useGameStore((state) => state.gameState);
   const myPlayer = useGameStore((state) => state.myPlayer);
   const opponentLeft = useGameStore((state) => state.opponentLeft);
+
+  // Chuẩn hóa boardSize từ server, nếu dị thường thì ép về 15
+  const rawSize = gameState?.boardSize;
+  const boardSize = (typeof rawSize === 'number' && (ALLOWED_SIZES as readonly number[]).includes(rawSize))
+    ? rawSize
+    : 15;
+
+  const fontClass = FONT_SIZE_MAP[boardSize] || FONT_SIZE_MAP[15];
+  const minWidthClass = MIN_WIDTH_MAP[boardSize] || MIN_WIDTH_MAP[15];
 
   const pieces = gameState?.pieces || {};
 
@@ -32,10 +54,10 @@ export const CaroBoard: React.FC = () => {
     });
   };
 
-  // Tạo mảng 225 ô (15x15) theo thứ tự hàng (y: 0->14) và cột (x: 0->14)
+  // Tạo mảng size * size ô theo thứ tự hàng (y: 0->size-1) và cột (x: 0->size-1)
   const cells = [];
-  for (let y = 0; y < BOARD_SIZE; y++) {
-    for (let x = 0; x < BOARD_SIZE; x++) {
+  for (let y = 0; y < boardSize; y++) {
+    for (let x = 0; x < boardSize; x++) {
       cells.push({ x, y });
     }
   }
@@ -43,10 +65,13 @@ export const CaroBoard: React.FC = () => {
   const isMyTurn = gameState?.matchStatus === 'ONGOING' && gameState?.currentPlayer === myPlayer;
 
   return (
-    <div className="w-full max-w-[640px] mx-auto my-4">
-      {/* Bàn cờ 15x15: arbitrary grid-cols, viền gỗ đậm, nền đất/mộc, không bo góc */}
-      <div className="border-4 border-stone-800 bg-[#e7dfd5] p-2">
-        <div className="grid grid-cols-[repeat(15,minmax(0,1fr))] border border-stone-800">
+    <div className="w-full max-w-[720px] mx-auto my-4 overflow-x-auto pb-2">
+      {/* Bàn cờ Caro động: CSS gridTemplateColumns inline, viền gỗ đậm, min-width chống vỡ giao diện trên mobile */}
+      <div className={`border-4 border-stone-800 bg-[#e7dfd5] p-2 mx-auto ${minWidthClass}`}>
+        <div
+          className="grid border border-stone-800"
+          style={{ gridTemplateColumns: `repeat(${boardSize}, minmax(0, 1fr))` }}
+        >
           {cells.map(({ x, y }) => {
             const piece = getPiece(x, y);
             const isClickable = isMyTurn && !piece;
@@ -64,12 +89,12 @@ export const CaroBoard: React.FC = () => {
                 `}
               >
                 {piece?.player === 'PLAYER_1' && (
-                  <span className="text-red-700 font-extrabold text-base sm:text-xl md:text-2xl select-none">
+                  <span className={`text-red-700 font-extrabold select-none ${fontClass}`}>
                     X
                   </span>
                 )}
                 {piece?.player === 'PLAYER_2' && (
-                  <span className="text-stone-800 font-extrabold text-base sm:text-xl md:text-2xl select-none">
+                  <span className={`text-stone-800 font-extrabold select-none ${fontClass}`}>
                     O
                   </span>
                 )}
