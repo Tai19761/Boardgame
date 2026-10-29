@@ -11,6 +11,7 @@ export default function App() {
 
   const [inputRoomId, setInputRoomId] = useState('');
   const [caroBoardSize, setCaroBoardSize] = useState<number>(15);
+  const [botDifficulty, setBotDifficulty] = useState<string>('NORMAL');
 
   useEffect(() => {
     webSocketService.connect();
@@ -24,7 +25,7 @@ export default function App() {
   };
 
   const handleCreateBotRoom = () => {
-    webSocketService.createBotRoom(caroBoardSize);
+    webSocketService.createBotRoom(caroBoardSize, botDifficulty);
   };
 
   const handleJoinRoom = () => {
@@ -136,9 +137,34 @@ export default function App() {
               <h3 className="font-extrabold text-stone-900 text-base uppercase mb-1">
                 Đấu với Máy
               </h3>
-              <p className="text-sm text-stone-700 mb-4">
-                Luyện tập Caro {caroBoardSize}x{caroBoardSize} với máy (Minimax + Alpha-Beta). Bạn cầm quân X và đi trước, ván bắt đầu ngay lập tức.
+              <p className="text-sm text-stone-700 mb-3">
+                Luyện tập Caro {caroBoardSize}x{caroBoardSize} với máy. Bạn cầm quân X và đi trước, ván bắt đầu ngay lập tức.
               </p>
+
+              {/* Tùy chọn cấp độ khó cho Bot */}
+              <div className="mb-4 p-3 bg-stone-100 border border-stone-400 flex flex-col sm:flex-row sm:items-center gap-2">
+                <label htmlFor="bot-difficulty-select" className="text-xs sm:text-sm font-bold text-stone-800 uppercase">
+                  Cấp độ Bot:
+                </label>
+                <select
+                  id="bot-difficulty-select"
+                  value={botDifficulty}
+                  onChange={(e) => setBotDifficulty(e.target.value)}
+                  className="px-2 py-1.5 border-2 border-stone-800 bg-white text-stone-900 font-bold text-sm focus:outline-none focus:border-stone-950 cursor-pointer"
+                >
+                  <option value="EASY">Dễ (Easy - Tập sự)</option>
+                  <option value="NORMAL">Bình thường (Normal - Depth 3)</option>
+                  <option value="HARD">Khó (Hard - Depth 4)</option>
+                  <option value="EXPERT">Cực khó (Expert - Depth 5 + Zobrist TT)</option>
+                </select>
+                <span className="text-xs text-stone-600 sm:ml-auto">
+                  {botDifficulty === 'EASY' && 'Bot chơi nhẹ nhàng, thích hợp làm quen'}
+                  {botDifficulty === 'NORMAL' && 'Bot cân bằng, phản hồi tức thì'}
+                  {botDifficulty === 'HARD' && 'Bot tính toán sâu, sắp xếp nước đi tối ưu'}
+                  {botDifficulty === 'EXPERT' && 'Bot cực mạnh, dùng bảng băm Zobrist'}
+                </span>
+              </div>
+
               <button
                 id="create-bot-room-button"
                 type="button"
@@ -146,7 +172,7 @@ export default function App() {
                 disabled={!isConnected}
                 className="w-full sm:w-auto px-6 py-3 bg-emerald-900 text-stone-100 font-bold border-2 border-emerald-950 hover:bg-emerald-800 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed uppercase"
               >
-                ⚙ Đấu Caro với Máy ({caroBoardSize}x{caroBoardSize})
+                ⚙ Đấu Caro với Máy ({caroBoardSize}x{caroBoardSize} - {botDifficulty === 'EASY' ? 'Dễ' : botDifficulty === 'NORMAL' ? 'Bình thường' : botDifficulty === 'HARD' ? 'Khó' : 'Cực khó'})
               </button>
             </div>
 

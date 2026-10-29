@@ -4,6 +4,7 @@ import com.project.boardgame.application.models.GameType;
 import com.project.boardgame.application.services.AiMoveService;
 import com.project.boardgame.application.services.MatchStatus;
 import com.project.boardgame.application.services.RoomManagerService;
+import com.project.boardgame.domain.ai.AiDifficulty;
 import com.project.boardgame.domain.models.MoveStep;
 import com.project.boardgame.domain.models.Player;
 import com.project.boardgame.domain.models.Position;
@@ -78,6 +79,19 @@ class MatchControllerBotMatchTest {
         assertEquals(GameType.CARO, state.gameType());
         assertTrue(roomManager.getRoom(state.roomId()).orElseThrow().isBotMatch());
         assertTrue(queuedAiTasks.isEmpty(), "Người chơi đi trước nên chưa được lên lịch Bot");
+    }
+
+    @Test
+    @DisplayName("Tạo phòng đấu máy với độ khó EXPERT: GameStateResponse trả về difficulty EXPERT")
+    void createBotRoom_WithDifficulty_ReturnsConfiguredDifficulty() {
+        GameStateResponse state = controller.createBotRoom(
+                new CreateRoomRequest(GameType.CARO, 15, AiDifficulty.EXPERT),
+                header("human")
+        );
+
+        assertNotNull(state.roomId());
+        assertEquals(AiDifficulty.EXPERT, state.difficulty());
+        assertEquals(AiDifficulty.EXPERT, roomManager.getRoom(state.roomId()).orElseThrow().getDifficulty());
     }
 
     @Test

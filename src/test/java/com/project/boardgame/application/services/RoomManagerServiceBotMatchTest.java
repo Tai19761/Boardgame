@@ -84,4 +84,15 @@ class RoomManagerServiceBotMatchTest {
         assertTrue(roomManager.getRoom(room.getRoomId()).isEmpty());
         assertTrue(roomManager.getRoomIdByPlayer("human").isEmpty());
     }
+
+    @Test
+    @DisplayName("Tạo phòng đấu máy với cấp độ khó: lưu đúng difficulty hoặc fallback về NORMAL nếu null")
+    void createBotRoom_WithDifficulty() {
+        Room roomExpert = roomManager.createBotRoom("human-expert", GameType.CARO, 20, com.project.boardgame.domain.ai.AiDifficulty.EXPERT);
+        assertEquals(com.project.boardgame.domain.ai.AiDifficulty.EXPERT, roomExpert.getDifficulty());
+        assertEquals(20, roomExpert.getBoardSize());
+
+        Room roomDefault = roomManager.createBotRoom("human-default", GameType.CARO, 15, null);
+        assertEquals(com.project.boardgame.domain.ai.AiDifficulty.NORMAL, roomDefault.getDifficulty(), "difficulty null thì fallback về NORMAL");
+    }
 }

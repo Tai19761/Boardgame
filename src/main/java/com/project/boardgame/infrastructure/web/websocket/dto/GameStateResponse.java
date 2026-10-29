@@ -4,6 +4,7 @@ import com.project.boardgame.application.models.GameType;
 import com.project.boardgame.application.models.Room;
 import com.project.boardgame.application.services.MatchEngineService;
 import com.project.boardgame.application.services.MatchStatus;
+import com.project.boardgame.domain.ai.AiDifficulty;
 import com.project.boardgame.domain.models.BoardState;
 import com.project.boardgame.domain.models.Piece;
 import com.project.boardgame.domain.models.Player;
@@ -21,8 +22,25 @@ public record GameStateResponse(
         int player2Score,
         Player winner,
         GameType gameType,
-        Integer boardSize
+        Integer boardSize,
+        AiDifficulty difficulty
 ) {
+
+    /** Tương thích ngược với các bài test không truyền difficulty. */
+    public GameStateResponse(
+            String roomId,
+            MatchStatus matchStatus,
+            Player currentPlayer,
+            Map<Position, Piece> pieces,
+            Map<Position, Integer> pieceCounts,
+            int player1Score,
+            int player2Score,
+            Player winner,
+            GameType gameType,
+            Integer boardSize
+    ) {
+        this(roomId, matchStatus, currentPlayer, pieces, pieceCounts, player1Score, player2Score, winner, gameType, boardSize, null);
+    }
 
     public static GameStateResponse from(String roomId, Room room) {
         MatchEngineService engine = room.getMatchEngine();
@@ -30,6 +48,7 @@ public record GameStateResponse(
         MatchStatus status = engine.getMatchStatus();
         GameType gameType = room.getGameType();
         Integer boardSize = room.getBoardSize();
+        AiDifficulty difficulty = room.getDifficulty();
 
         Player winner = null;
         if (status == MatchStatus.WIN_PLAYER_1) {
@@ -49,7 +68,8 @@ public record GameStateResponse(
                     0,
                     null,
                     gameType,
-                    boardSize
+                    boardSize,
+                    difficulty
             );
         }
 
@@ -63,7 +83,8 @@ public record GameStateResponse(
                 board.player2Score(),
                 winner,
                 gameType,
-                boardSize
+                boardSize,
+                difficulty
         );
     }
 }

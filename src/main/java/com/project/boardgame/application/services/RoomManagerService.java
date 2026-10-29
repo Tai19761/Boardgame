@@ -5,6 +5,7 @@ import com.project.boardgame.application.models.PlayerDisconnectInfo;
 import com.project.boardgame.application.models.Room;
 import com.project.boardgame.application.models.RoomStatus;
 import com.project.boardgame.application.ports.GameRuleEngineFactory;
+import com.project.boardgame.domain.ai.AiDifficulty;
 import com.project.boardgame.domain.rules.GameRuleEngine;
 import org.springframework.stereotype.Service;
 
@@ -72,25 +73,30 @@ public class RoomManagerService {
     }
 
     public Room createBotRoom(String playerId, GameType gameType) {
-        return createBotRoom(playerId, gameType, null);
+        return createBotRoom(playerId, gameType, null, AiDifficulty.NORMAL);
+    }
+
+    public Room createBotRoom(String playerId, GameType gameType, Integer boardSize) {
+        return createBotRoom(playerId, gameType, boardSize, AiDifficulty.NORMAL);
     }
 
     /**
      * Tạo phòng đấu với máy (chỉ hỗ trợ CARO). Phòng vào trạng thái PLAYING và ván ONGOING ngay,
      * guestId = {@link Room#BOT_ID}. Bot không được ghi vào playerToRoomMap.
      */
-    public Room createBotRoom(String playerId, GameType gameType, Integer boardSize) {
+    public Room createBotRoom(String playerId, GameType gameType, Integer boardSize, AiDifficulty difficulty) {
         if (gameType != GameType.CARO) {
             throw new IllegalArgumentException("Chế độ đấu với máy hiện chỉ hỗ trợ Cờ Caro");
         }
         Integer resolvedSize = resolveBoardSize(gameType, boardSize);
+        AiDifficulty resolvedDifficulty = difficulty != null ? difficulty : AiDifficulty.NORMAL;
         if (playerToRoomMap.putIfAbsent(playerId, "PENDING") != null) {
             throw new IllegalStateException("Người chơi đang ở trong phòng khác hoặc đang tạo phòng");
         }
 
         try {
             GameRuleEngine engine = ruleEngineFactory.create(gameType, resolvedSize);
-            Room room = Room.createBotMatch(playerId, gameType, engine, new MatchEngineService(), resolvedSize);
+            Room room = Room.createBotMatch(playerId, gameType, engine, new MatchEngineService(), resolvedSize, resolvedDifficulty);
             rooms.put(room.getRoomId(), room);
             playerToRoomMap.put(playerId, room.getRoomId());
             return room;

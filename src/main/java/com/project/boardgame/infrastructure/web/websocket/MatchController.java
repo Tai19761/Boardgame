@@ -9,6 +9,7 @@ import com.project.boardgame.application.services.RoomJoinException;
 import com.project.boardgame.application.services.RoomManagerService;
 import com.project.boardgame.application.services.RoomNotFoundException;
 import com.project.boardgame.application.services.UnauthorizedSpectatorException;
+import com.project.boardgame.domain.ai.AiDifficulty;
 import com.project.boardgame.domain.models.Player;
 import com.project.boardgame.infrastructure.web.websocket.dto.CreateRoomRequest;
 import com.project.boardgame.infrastructure.web.websocket.dto.CreateRoomResponse;
@@ -97,9 +98,11 @@ public class MatchController {
                 ? request.gameType()
                 : GameType.CARO;
         Integer boardSize = request != null ? request.boardSize() : null;
+        AiDifficulty difficulty = request != null ? request.difficulty() : null;
 
-        Room room = roomManagerService.createBotRoom(playerId, gameType, boardSize);
-        log.info("Player {} created BOT room {} for game {} (boardSize={})", playerId, room.getRoomId(), gameType, room.getBoardSize());
+        Room room = roomManagerService.createBotRoom(playerId, gameType, boardSize, difficulty);
+        log.info("Player {} created BOT room {} for game {} (boardSize={}, difficulty={})",
+                playerId, room.getRoomId(), gameType, room.getBoardSize(), room.getDifficulty());
         synchronized (room) {
             return GameStateResponse.from(room.getRoomId(), room);
         }

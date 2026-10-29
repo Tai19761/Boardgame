@@ -155,6 +155,13 @@ export const GameRoom: React.FC = () => {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-stone-700 text-sm">Phòng: </span>
             <code className="font-mono font-bold text-xs sm:text-sm break-all">{roomId}</code>
+            {isBotMatch && (
+              <span className="bg-emerald-800 text-white text-[11px] font-bold px-1.5 py-0.5 border border-emerald-950 uppercase">
+                {gameState.difficulty
+                  ? `Bot: ${gameState.difficulty === 'EASY' ? 'Dễ' : gameState.difficulty === 'NORMAL' ? 'Bình thường' : gameState.difficulty === 'HARD' ? 'Khó' : 'Cực khó'}`
+                  : 'Đấu với Máy'}
+              </span>
+            )}
             <button
               type="button"
               onClick={handleExit}

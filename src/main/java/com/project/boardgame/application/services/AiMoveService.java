@@ -4,6 +4,7 @@ import com.project.boardgame.application.models.GameType;
 import com.project.boardgame.application.models.Room;
 import com.project.boardgame.application.models.RoomStatus;
 import com.project.boardgame.application.ports.MatchStateBroadcaster;
+import com.project.boardgame.domain.ai.AiDifficulty;
 import com.project.boardgame.domain.ai.CaroMinimax;
 import com.project.boardgame.domain.models.BoardState;
 import com.project.boardgame.domain.models.MoveStep;
@@ -78,9 +79,10 @@ public class AiMoveService {
             }
 
             // 2) Tính toán NGOÀI khóa (CPU nặng) trên snapshot bất biến; rule engine lấy từ phòng (do factory tạo),
-            //    kích thước bàn lấy từ phòng để evaluator/Minimax không bị kẹt ở 15x15
+            //    kích thước bàn và độ khó lấy từ phòng để cấu hình Minimax tương ứng
             int boardSize = room.getBoardSize() != null ? room.getBoardSize() : CaroRuleEngine.DEFAULT_BOARD_SIZE;
-            Position bestMove = new CaroMinimax(room.getRuleEngine(), boardSize).findBestMove(snapshot, BOT_PLAYER);
+            AiDifficulty difficulty = room.getDifficulty() != null ? room.getDifficulty() : AiDifficulty.NORMAL;
+            Position bestMove = new CaroMinimax(room.getRuleEngine(), boardSize, difficulty).findBestMove(snapshot, BOT_PLAYER);
 
             // 3) Có kết quả: lấy lại phòng theo roomId, bỏ qua nếu phòng đã bị xóa/thay thế hoặc đã kết thúc
             Optional<Room> latestOpt = roomManagerService.getRoom(roomId);

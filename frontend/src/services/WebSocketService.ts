@@ -220,15 +220,18 @@ export class WebSocketService {
     });
   }
 
-  public createBotRoom(boardSize?: number): void {
+  public createBotRoom(boardSize?: number, difficulty?: string): void {
     if (!this.client.connected) {
       useGameStore.getState().setErrorMessage('Chưa kết nối tới máy chủ WebSocket');
       return;
     }
 
-    const payload: { gameType: string; boardSize?: number } = { gameType: 'CARO' };
+    const payload: { gameType: string; boardSize?: number; difficulty?: string } = { gameType: 'CARO' };
     if (boardSize !== undefined) {
       payload.boardSize = boardSize;
+    }
+    if (difficulty !== undefined) {
+      payload.difficulty = difficulty;
     }
 
     this.client.publish({

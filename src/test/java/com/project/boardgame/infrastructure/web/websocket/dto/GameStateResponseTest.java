@@ -111,4 +111,14 @@ class GameStateResponseTest {
         assertEquals(GameType.GANH, response.gameType());
         assertTrue(response.pieces().isEmpty(), "Phòng đang chờ chưa có quân cờ");
     }
+
+    @Test
+    @DisplayName("from(roomId, room) cho phòng Bot CARO: trả về đúng difficulty tương ứng")
+    void testFrom_BotRoom_ReturnsDifficulty() {
+        Room botRoom = roomManager.createBotRoom("host-bot-diff", GameType.CARO, 15, com.project.boardgame.domain.ai.AiDifficulty.HARD);
+        GameStateResponse response = GameStateResponse.from(botRoom.getRoomId(), botRoom);
+
+        assertNotNull(response);
+        assertEquals(com.project.boardgame.domain.ai.AiDifficulty.HARD, response.difficulty());
+    }
 }

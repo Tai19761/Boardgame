@@ -16,40 +16,56 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Engine AI cho Cờ Caro: Minimax + cắt tỉa Alpha-Beta (Java thuần, không phụ thuộc framework).
+ * Engine AI cho Cờ Caro hỗ trợ 4 cấp độ khó:
+ * - EASY (Depth 1, ngẫu nhiên có kiểm soát, luôn chặn/đánh nước thắng ngay).
+ * - NORMAL (Depth 3, Minimax + Alpha-Beta chuẩn).
+ * - HARD (Depth 4, Minimax + Alpha-Beta kết hợp Move Ordering).
+ * - EXPERT (Depth 5, Minimax + Alpha-Beta kết hợp Zobrist Hashing và Transposition Table).
  * <p>
  * Luật cờ (sinh trạng thái con, kiểm tra hợp lệ, kiểm tra thắng) được ỦY QUYỀN hoàn toàn cho
  * {@link GameRuleEngine} được inject qua constructor — class này KHÔNG tự khởi tạo rule engine.
- * <p>
- * Tối ưu không gian tìm kiếm: chỉ xét các ô trống nằm trong bán kính {@value #SEARCH_RADIUS}
- * quanh các quân đã có trên bàn; ứng viên được sắp xếp theo heuristic để Alpha-Beta cắt tỉa sớm.
  */
 public class CaroMinimax {
 
     public static final int DEFAULT_DEPTH = 3;
     public static final int SEARCH_RADIUS = 2;
-    /** Giới hạn số nhánh ở các node bên trong (sau khi đã sắp xếp), node gốc luôn duyệt đủ. */
-    static final int MAX_INNER_BRANCHING = 20;
     static final int WIN_SCORE = 100_000_000;
 
     private final GameRuleEngine ruleEngine;
     private final CaroHeuristicEvaluator evaluator;
     private final int boardSize;
     private final int depth;
+    private final AiDifficulty difficulty;
 
-    /** Cấu hình mặc định: bàn 15x15, độ sâu {@value #DEFAULT_DEPTH}. */
+    /** Cấu hình mặc định: bàn 15x15, độ sâu {@value #DEFAULT_DEPTH}, độ khó NORMAL. */
     public CaroMinimax(GameRuleEngine ruleEngine) {
         this(ruleEngine, CaroRuleEngine.DEFAULT_BOARD_SIZE);
     }
 
-    /** Bàn {@code boardSize}x{@code boardSize}, độ sâu {@value #DEFAULT_DEPTH}; evaluator khởi tạo đúng kích thước. */
+    /** Bàn {@code boardSize}x{@code boardSize}, độ sâu mặc định, độ khó NORMAL. */
     public CaroMinimax(GameRuleEngine ruleEngine, int boardSize) {
-        this(ruleEngine, new CaroHeuristicEvaluator(boardSize), boardSize, DEFAULT_DEPTH);
+        this(ruleEngine, boardSize, AiDifficulty.NORMAL);
+    }
+
+    /** Bàn {@code boardSize}x{@code boardSize} theo cấp độ khó {@link AiDifficulty}. */
+    public CaroMinimax(GameRuleEngine ruleEngine, int boardSize, AiDifficulty difficulty) {
+        this(
+                ruleEngine,
+                new CaroHeuristicEvaluator(boardSize),
+                boardSize,
+                resolveDepth(difficulty != null ? difficulty : AiDifficulty.NORMAL),
+                difficulty != null ? difficulty : AiDifficulty.NORMAL
+        );
     }
 
     public CaroMinimax(GameRuleEngine ruleEngine, CaroHeuristicEvaluator evaluator, int boardSize, int depth) {
+        this(ruleEngine, evaluator, boardSize, depth, AiDifficulty.NORMAL);
+    }
+
+    public CaroMinimax(GameRuleEngine ruleEngine, CaroHeuristicEvaluator evaluator, int boardSize, int depth, AiDifficulty difficulty) {
         this.ruleEngine = Objects.requireNonNull(ruleEngine, "ruleEngine");
         this.evaluator = Objects.requireNonNull(evaluator, "evaluator");
         if (boardSize <= 0) {
@@ -60,11 +76,41 @@ public class CaroMinimax {
         }
         this.boardSize = boardSize;
         this.depth = depth;
+        this.difficulty = difficulty != null ? difficulty : AiDifficulty.NORMAL;
+    }
+
+    public static int resolveDepth(AiDifficulty difficulty) {
+        return switch (difficulty) {
+            case EASY -> 1;
+            case NORMAL -> 3;
+            case HARD -> 4;
+            case EXPERT -> 5;
+        };
+    }
+
+    public static int resolveMaxInnerBranching(AiDifficulty difficulty) {
+        return switch (difficulty) {
+            case EASY -> 10;
+            case NORMAL -> 20;
+            case HARD -> 16;
+            case EXPERT -> 12;
+        };
+    }
+
+    public AiDifficulty getDifficulty() {
+        return difficulty;
+    }
+
+    public int getDepth() {
+        return depth;
+    }
+
+    public int getBoardSize() {
+        return boardSize;
     }
 
     /**
      * Tìm nước đi tốt nhất cho {@code botPlayer} trên {@code board}.
-     * Bàn trống → đánh ô giữa. Có nước thắng ngay → đánh luôn. Còn lại → Minimax + Alpha-Beta.
      */
     public Position findBestMove(BoardState board, Player botPlayer) {
         Objects.requireNonNull(board, "board");
@@ -79,7 +125,7 @@ public class CaroMinimax {
             throw new IllegalStateException("Không còn nước đi hợp lệ cho Bot");
         }
 
-        // Sinh trạng thái con 1 lần cho node gốc; thắng ngay thì không cần tìm kiếm sâu hơn
+        // 1. Nước thắng ngay cho Bot: đánh luôn
         Map<Position, BoardState> children = new HashMap<>();
         for (Position candidate : candidates) {
             BoardState child = apply(board, candidate, botPlayer);
@@ -89,13 +135,56 @@ public class CaroMinimax {
             children.put(candidate, child);
         }
 
+        // 2. Chặn nước đối thủ có thể thắng ngay ở lượt kế tiếp (áp dụng cho mọi cấp độ)
+        Player opponent = botPlayer == Player.PLAYER_1 ? Player.PLAYER_2 : Player.PLAYER_1;
+        BoardState opponentTurnBoard = new BoardState(board.pieces(), opponent);
+        for (Position candidate : candidates) {
+            BoardState opponentMove = apply(opponentTurnBoard, candidate, opponent);
+            if (ruleEngine.checkWinner(opponentMove, candidate).isPresent()) {
+                return candidate;
+            }
+        }
+
+        // 3. Cấp độ EASY: chọn ngẫu nhiên trong top 3 ứng viên tốt nhất
+        if (difficulty == AiDifficulty.EASY) {
+            int poolSize = Math.min(3, candidates.size());
+            int pick = ThreadLocalRandom.current().nextInt(poolSize);
+            return candidates.get(pick);
+        }
+
+        int maxBranching = resolveMaxInnerBranching(difficulty);
+
+        // 4. Cấp độ EXPERT: Minimax + Alpha-Beta kết hợp Transposition Table (Zobrist Hashing)
+        if (difficulty == AiDifficulty.EXPERT) {
+            TranspositionTable tt = new TranspositionTable();
+            long rootHash = ZobristKeyGenerator.computeHash(board);
+
+            Position bestMove = candidates.get(0);
+            int bestScore = Integer.MIN_VALUE;
+            int alpha = Integer.MIN_VALUE;
+            int beta = Integer.MAX_VALUE;
+
+            for (Position candidate : candidates) {
+                BoardState child = children.get(candidate);
+                long childHash = ZobristKeyGenerator.updateMove(rootHash, candidate, botPlayer);
+                int score = minimaxExpert(child, depth - 1, alpha, beta, botPlayer, candidate, childHash, tt, maxBranching);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = candidate;
+                }
+                alpha = Math.max(alpha, bestScore);
+            }
+            return bestMove;
+        }
+
+        // 5. Cấp độ NORMAL và HARD: Minimax Alpha-Beta chuẩn
         Position bestMove = candidates.get(0);
         int bestScore = Integer.MIN_VALUE;
         int alpha = Integer.MIN_VALUE;
         int beta = Integer.MAX_VALUE;
 
         for (Position candidate : candidates) {
-            int score = minimax(children.get(candidate), depth - 1, alpha, beta, botPlayer, candidate);
+            int score = minimax(children.get(candidate), depth - 1, alpha, beta, botPlayer, candidate, maxBranching);
             if (score > bestScore) {
                 bestScore = score;
                 bestMove = candidate;
@@ -105,11 +194,9 @@ public class CaroMinimax {
         return bestMove;
     }
 
-    private int minimax(BoardState board, int remainingDepth, int alpha, int beta, Player botPlayer, Position lastMove) {
-        // Kiểm tra kết thúc dựa trên nước vừa đi (O(1) theo 4 hướng thay vì quét toàn bàn)
+    private int minimax(BoardState board, int remainingDepth, int alpha, int beta, Player botPlayer, Position lastMove, int maxBranching) {
         Optional<Player> winner = ruleEngine.checkWinner(board, lastMove);
         if (winner.isPresent()) {
-            // Thắng càng sớm (remainingDepth lớn) càng tốt, thua càng muộn càng đỡ
             return winner.get() == botPlayer ? WIN_SCORE + remainingDepth : -WIN_SCORE - remainingDepth;
         }
         if (board.pieces().size() >= boardSize * boardSize) {
@@ -120,7 +207,7 @@ public class CaroMinimax {
         }
 
         Player mover = board.currentPlayer();
-        List<Position> candidates = orderedCandidates(board, mover, MAX_INNER_BRANCHING);
+        List<Position> candidates = orderedCandidates(board, mover, maxBranching);
         if (candidates.isEmpty()) {
             return evaluator.evaluate(board, botPlayer);
         }
@@ -128,7 +215,7 @@ public class CaroMinimax {
         if (mover == botPlayer) {
             int value = Integer.MIN_VALUE;
             for (Position candidate : candidates) {
-                value = Math.max(value, minimax(apply(board, candidate, mover), remainingDepth - 1, alpha, beta, botPlayer, candidate));
+                value = Math.max(value, minimax(apply(board, candidate, mover), remainingDepth - 1, alpha, beta, botPlayer, candidate, maxBranching));
                 alpha = Math.max(alpha, value);
                 if (alpha >= beta) {
                     break; // Cắt tỉa Beta
@@ -138,7 +225,7 @@ public class CaroMinimax {
         } else {
             int value = Integer.MAX_VALUE;
             for (Position candidate : candidates) {
-                value = Math.min(value, minimax(apply(board, candidate, mover), remainingDepth - 1, alpha, beta, botPlayer, candidate));
+                value = Math.min(value, minimax(apply(board, candidate, mover), remainingDepth - 1, alpha, beta, botPlayer, candidate, maxBranching));
                 beta = Math.min(beta, value);
                 if (alpha >= beta) {
                     break; // Cắt tỉa Alpha
@@ -146,6 +233,83 @@ public class CaroMinimax {
             }
             return value;
         }
+    }
+
+    private int minimaxExpert(
+            BoardState board,
+            int remainingDepth,
+            int alpha,
+            int beta,
+            Player botPlayer,
+            Position lastMove,
+            long currentHash,
+            TranspositionTable tt,
+            int maxBranching
+    ) {
+        Optional<Player> winner = ruleEngine.checkWinner(board, lastMove);
+        if (winner.isPresent()) {
+            // Không lưu các trạng thái thắng/thua tuyệt đối vào TT để tránh lệch điểm theo depth giữa các nhánh
+            return winner.get() == botPlayer ? WIN_SCORE + remainingDepth : -WIN_SCORE - remainingDepth;
+        }
+        if (board.pieces().size() >= boardSize * boardSize) {
+            return 0;
+        }
+        if (remainingDepth == 0) {
+            return evaluator.evaluate(board, botPlayer);
+        }
+
+        // Tra cứu Transposition Table cho các trạng thái trung gian
+        Integer cachedScore = tt.lookup(currentHash, remainingDepth, alpha, beta);
+        if (cachedScore != null) {
+            return cachedScore;
+        }
+
+        int originalAlpha = alpha;
+        Player mover = board.currentPlayer();
+        List<Position> candidates = orderedCandidates(board, mover, maxBranching);
+        if (candidates.isEmpty()) {
+            return evaluator.evaluate(board, botPlayer);
+        }
+
+        int value;
+        if (mover == botPlayer) {
+            value = Integer.MIN_VALUE;
+            for (Position candidate : candidates) {
+                BoardState nextBoard = apply(board, candidate, mover);
+                long nextHash = ZobristKeyGenerator.updateMove(currentHash, candidate, mover);
+                int score = minimaxExpert(nextBoard, remainingDepth - 1, alpha, beta, botPlayer, candidate, nextHash, tt, maxBranching);
+                value = Math.max(value, score);
+                alpha = Math.max(alpha, value);
+                if (alpha >= beta) {
+                    break;
+                }
+            }
+        } else {
+            value = Integer.MAX_VALUE;
+            for (Position candidate : candidates) {
+                BoardState nextBoard = apply(board, candidate, mover);
+                long nextHash = ZobristKeyGenerator.updateMove(currentHash, candidate, mover);
+                int score = minimaxExpert(nextBoard, remainingDepth - 1, alpha, beta, botPlayer, candidate, nextHash, tt, maxBranching);
+                value = Math.min(value, score);
+                beta = Math.min(beta, value);
+                if (alpha >= beta) {
+                    break;
+                }
+            }
+        }
+
+        // Ghi nhận vào Transposition Table
+        TranspositionTable.Flag flag;
+        if (value <= originalAlpha) {
+            flag = TranspositionTable.Flag.UPPER_BOUND;
+        } else if (value >= beta) {
+            flag = TranspositionTable.Flag.LOWER_BOUND;
+        } else {
+            flag = TranspositionTable.Flag.EXACT;
+        }
+        tt.store(currentHash, remainingDepth, value, flag);
+
+        return value;
     }
 
     /**

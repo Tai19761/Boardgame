@@ -324,3 +324,31 @@ Khắc phục xung đột kiểu dữ liệu trên WebSocket bằng cách tách 
   - Cập nhật và bổ sung test trong `MatchControllerTest`, `GameStateResponseTest`, `CaroMinimaxTest`.
   - Kết quả: 134/134 bài test Backend PASS 100%, frontend TypeScript & Vite build hoàn tất không lỗi.
 
+---
+
+### Lệnh 18: Phân chia 4 cấp độ khó cho AI Caro và Tích hợp Zobrist Hashing (Transposition Table)
+- **Mục tiêu:** Nâng cấp hệ thống AI Caro từ 1 độ sâu cố định thành 4 cấp độ khó rõ rệt: **Dễ (Easy)**, **Bình thường (Normal)**, **Khó (Hard)**, và **Cực khó (Expert)**. Tích hợp bảng băm Zobrist (Transposition Table) với cơ chế băm gia tăng O(1) để tối ưu hóa hiệu năng tìm kiếm cho cấp độ Expert, chống nghẽn luồng và duy trì phản hồi dưới 2 giây.
+- **Backend (Domain, Application & Infrastructure):**
+  - `AiDifficulty.java`: Enum định nghĩa 4 cấp độ khó `EASY`, `NORMAL`, `HARD`, `EXPERT`.
+  - `ZobristKeyGenerator.java`: Bộ sinh khóa ngẫu nhiên 64-bit deterministic (`long[25][25][2]` và `SIDE_TO_MOVE_KEY`) với seed `0xCAFE_BABE_1234_5678L`. Hỗ trợ hàm băm toàn diện `computeHash(BoardState)` và cập nhật gia tăng O(1) `updateMove(hash, pos, player)`.
+  - `TranspositionTable.java`: Bảng băm giới hạn kích thước lũy thừa 2 (`SIZE = 65536`) dùng bitmask indexing `(int) (key & (SIZE - 1))` cực nhanh. Quản lý trạng thái bằng cờ `Flag (EXACT, LOWER_BOUND, UPPER_BOUND)`. Chiến lược thay thế ưu tiên độ sâu lớn hơn (`remainingDepth >= existing.depth`). Cung cấp `lookup` và `store`. Mỗi lượt tìm kiếm của Bot khởi tạo 1 bảng riêng, đảm bảo thread-safe và cô lập hoàn toàn giữa các phòng chơi.
+  - `CaroMinimax.java`:
+    - Độ sâu và số nhánh duyệt động: `EASY` (depth 1, nhánh 10), `NORMAL` (depth 3, nhánh 20), `HARD` (depth 4, nhánh 16), `EXPERT` (depth 5, nhánh 12 + Transposition Table).
+    - Bảo vệ thông minh cho `EASY`: Luôn đánh thắng ngay nếu có cơ hội hoặc chặn ngay nước thắng của đối thủ ở lượt kế tiếp; chỉ chọn ngẫu nhiên trong top 3 nước đi tốt nhất khi ở thế cờ thông thường (tránh đi nước ngớ ngẩn).
+    - Cấp độ `EXPERT`: Tích hợp `minimaxExpert` với tra cứu/ghi nhận Transposition Table, cắt tỉa Alpha-Beta và cập nhật Zobrist hash gia tăng. Không cache điểm số kết thúc tuyệt đối (`WIN_SCORE + depth`) để tránh lệch điểm giữa các nhánh.
+  - `Room.java` & `RoomManagerService.java`: Lưu trữ và cấu hình `AiDifficulty difficulty` cho phòng đấu máy (mặc định fallback về `NORMAL`).
+  - `AiMoveService.java`: Khởi tạo `CaroMinimax` đúng độ khó cấu hình của phòng đấu `room.getDifficulty()`.
+  - `CreateRoomRequest.java` & `GameStateResponse.java`: Bổ sung trường `AiDifficulty difficulty` với các constructor overload tương thích ngược 100%.
+  - `MatchController.java`: Tiếp nhận `difficulty` từ `CreateRoomRequest` và cấu hình phòng đấu máy tương ứng.
+- **Frontend (React / Zustand / Tailwind):**
+  - `useGameStore.ts`: Bổ sung `difficulty?: 'EASY' | 'NORMAL' | 'HARD' | 'EXPERT' | null;` vào `GameStateResponse`.
+  - `WebSocketService.ts`: Bổ sung tham số `difficulty?: string` vào phương thức `createBotRoom`.
+  - `App.tsx`: Thêm dropdown chọn độ khó (Dễ, Bình thường, Khó, Cực khó) tại Khối Đấu với Máy (1b).
+  - `GameRoom.tsx`: Hiển thị huy hiệu độ khó AI trên thanh tiêu đề phòng đấu máy (xanh lá, xanh lam, vàng, đỏ).
+- **Kiểm thử tự động:**
+  - `ZobristKeyGeneratorTest.java`: Kiểm thử tính xác định, tính phân biệt, tính hoàn nghịch phép XOR, tính nhất quán giữa băm gia tăng và băm toàn diện.
+  - `TranspositionTableTest.java`: Kiểm thử lưu trữ/tra cứu cho cả 3 loại cờ EXACT, LOWER_BOUND, UPPER_BOUND, kiểm thử chiến lược thay thế theo depth, xóa bảng, guard clauses.
+  - `CaroMinimaxDifficultyTest.java`: Kiểm thử nước đi trung tâm khi bàn trống cho cả 4 cấp độ, kiểm thử EASY đánh thắng ngay và chặn nước thắng, kiểm thử HARD và EXPERT phản hồi nhanh (< 2000ms).
+  - `GameStateResponseTest.java`, `RoomManagerServiceBotMatchTest.java`, `MatchControllerBotMatchTest.java`: Bổ sung kiểm thử khởi tạo và truyền tải trường `difficulty`.
+  - Kết quả: Toàn bộ 153/153 bài test backend PASS 100% (bao gồm cả `ArchitectureTest` tuân thủ Clean Architecture), frontend TypeScript & Vite build hoàn tất không lỗi.
+

@@ -29,6 +29,7 @@ export interface GameStateResponse {
   winner: Player | null;
   gameType: string;
   boardSize?: number | null;
+  difficulty?: 'EASY' | 'NORMAL' | 'HARD' | 'EXPERT' | null;
   [key: string]: unknown;
 }
 
