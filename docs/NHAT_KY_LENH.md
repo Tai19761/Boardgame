@@ -352,3 +352,19 @@ Khắc phục xung đột kiểu dữ liệu trên WebSocket bằng cách tách 
   - `GameStateResponseTest.java`, `RoomManagerServiceBotMatchTest.java`, `MatchControllerBotMatchTest.java`: Bổ sung kiểm thử khởi tạo và truyền tải trường `difficulty`.
   - Kết quả: Toàn bộ 153/153 bài test backend PASS 100% (bao gồm cả `ArchitectureTest` tuân thủ Clean Architecture), frontend TypeScript & Vite build hoàn tất không lỗi.
 
+---
+
+### Lệnh 19: Tái cấu trúc UX/UI Sảnh chờ - Contextual Settings (Giao diện tại chỗ)
+- **Mục tiêu:** Tái thiết kế giao diện Sảnh chờ (Lobby) trong `App.tsx` theo mô hình "Cấu hình tại chỗ" (Contextual Settings). Tách biệt triệt để trạng thái cấu hình bàn cờ giữa chế độ Đấu Người (PvP) và Đấu với Máy (Bot Match), tránh tình trạng người dùng nhầm lẫn hoặc bị nhảy số cấu hình chéo.
+- **Frontend (React / Tailwind):**
+  - Tách state kích thước bàn cờ: Thay thế `caroBoardSize` dùng chung bằng `pvpBoardSize` (mặc định 15) và `botBoardSize` (mặc định 15). Giữ nguyên `botDifficulty` (mặc định 'NORMAL').
+  - Chuyển đổi bố cục sảnh chờ sang Grid 2 cột trên Desktop (`grid grid-cols-1 md:grid-cols-2 gap-6 items-start`) và 1 cột trên Mobile, tăng độ rộng khung chứa lên `max-w-4xl` giúp hiển thị thoáng đãng và trực quan.
+  - **Cột trái (Tạo phòng PvP):** Chứa khối "Tạo Phòng Mới (PvP)". Mục Caro gồm ô `<select>` chọn `pvpBoardSize` (15/20/25) đi kèm nút `+ Tạo phòng Caro`. Mục Cờ Gánh và Ô Ăn Quan được đặt độc lập bên dưới, hoàn toàn không kèm dropdown chọn cỡ bàn.
+  - **Cột phải (Đấu Máy & Vào phòng):**
+    - Khối "Đấu với Máy (Bot Match)": Tích hợp hai menu cấu hình liền kề trong một khung viền mộc mạc: Kích thước bàn (`botBoardSize`) và Cấp độ Bot (`botDifficulty`), kèm nút kích hoạt `⚙ Đấu Caro với Máy` hiển thị trực tiếp cấu hình đã chọn.
+    - Khối "Vào Phòng Đã Có": Đặt ngay bên dưới khối Đấu Máy, ghép ô nhập mã UUID và nút Vào Phòng trên cùng hàng ngang gọn gàng.
+  - Tuân thủ nghiêm ngặt phong cách Retro/Mộc: Tuyệt đối không dùng bo góc (`rounded-*`), không bóng đổ (`shadow-*`), chỉ dùng viền dày (`border-4`, `border-2`, `border-stone-800`), màu nền gỗ/đất (`bg-[#e7dfd5]`, `bg-stone-200`, `text-stone-900`).
+- **Kiểm thử & Đảm bảo chất lượng:**
+  - Giữ nguyên vẹn kiến trúc Backend (Hexagonal Architecture), không làm ảnh hưởng bất kỳ file Java nào.
+  - Kiểm thử `npm run build` và `oxlint` thành công 100% không cảnh báo, không lỗi kiểu dữ liệu (không dùng `any`).
+  - Kiểm thử `.\mvnw.cmd clean test` toàn bộ 153/153 bài test Backend PASS 100%.
